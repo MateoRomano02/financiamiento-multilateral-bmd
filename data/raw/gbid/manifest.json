@@ -1,0 +1,23 @@
+{
+  "descripcion": "Descargas desde las fuentes oficiales. Se regeneran con scripts/descargar_fuentes.py.",
+  "descargas": [
+    {
+      "archivo": "bid_proyectos_2026-08-21.csv",
+      "institucion": "BID",
+      "url_origen": "https://data.iadb.org/file/download/791d475c-0f61-411c-ae92-2242c913e73a",
+      "fecha_descarga": "2026-08-21T14:06:25+00:00",
+      "bytes": 16427873,
+      "registros": 27329,
+      "descripcion": "Catalogo de datos abiertos del BID. Incluye BID Lab, filtrable por lending_instrmnt_cd == 'MIF'."
+    },
+    {
+      "archivo": "bid_proyectos_2026-08-21.csv",
+      "institucion": "BID",
+      "url_origen": "https://data.iadb.org/file/download/791d475c-0f61-411c-ae92-2242c913e73a",
+      "fecha_descarga": "2026-08-21T14:45:15+00:00",
+      "bytes": 16427873,
+      "registros": 27329,
+      "descripcion": "Catalogo de datos abiertos del BID (CKAN), DOI 10.60966/ihisavwe, CC-BY 4.0. Incluye BID Lab, filtrable por lending_instrmnt_cd == 'MIF'."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# Datos: se reconstruyen ejecutando los programas. Solo se versionan los manifiestos.
+data/raw/*/*
+!data/raw/*/manifest.json
+data/interim/
+data/processed/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Sistema
+.DS_Store

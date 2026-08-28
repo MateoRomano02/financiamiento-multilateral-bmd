@@ -1,0 +1,29 @@
+MIT License
+
+Copyright (c) 2026 Mateo Romano — Proyecto CIAI-LCD-STD-UNSAM Nº 34
+"Financiamiento multilateral de iniciativas de transicion energetica"
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+NOTA SOBRE LOS DATOS: la licencia MIT cubre el CODIGO. Los datos derivados de
+las bases del equipo de investigacion (publicadas en el repositorio CONICET,
+handle 11336/286473, bajo CC BY-NC 2.5 AR) se redistribuyen bajo esa misma
+licencia. Los datos descargados de los portales de cada banco se rigen por los
+terminos de uso de cada institucion, documentados en docs/accesos-a-los-datos.md.

@@ -1,0 +1,14 @@
+{
+  "descripcion": "Descargas desde las fuentes oficiales. Se regeneran con scripts/descargar_fuentes.py.",
+  "descargas": [
+    {
+      "archivo": "ndb_proyectos_2026-08-21.html",
+      "institucion": "NDB",
+      "url_origen": "https://www.ndb.int/projects/all-projects/",
+      "fecha_descarga": "2026-08-21T14:03:17+00:00",
+      "bytes": 160695,
+      "registros": null,
+      "descripcion": "Listado de proyectos del NDB en HTML estatico."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "descripcion": "Descargas desde las fuentes oficiales. Se regeneran con scripts/descargar_fuentes.py.",
+  "descargas": [
+    {
+      "archivo": "birf-ida_proyectos_2026-08-23.json",
+      "institucion": "BIRF/IDA",
+      "url_origen": "https://search.worldbank.org/api/v3/projects?format=json&rows=1000&fl=id,proj_id,project_name,project_abstract,countryname,countrycode,countryshortname,regionname,boardapprovaldate,closingdate,approvalfy,status,projectstatusdisplay,totalamt,totalcommamt,curr_total_commitment,ibrdcommamt,idacommamt,grantamt,lendprojectcost,borrower,impagency,mjsector,major_sectors,sector1,theme1,lendinginstr,prodline,esrc_ovrl_risk_rate,envassesmentcategorycode,cons_serv_reqd_ind,teamleadname,url,source",
+      "fecha_descarga": "2026-08-24T01:41:55+00:00",
+      "bytes": 49452970,
+      "registros": 28081,
+      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255 (verificado el 21/08/2026).",
+      "version_endpoint": "v3"
+    }
+  ]
+}
