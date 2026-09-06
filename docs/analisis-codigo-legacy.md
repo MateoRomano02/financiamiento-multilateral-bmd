@@ -61,7 +61,7 @@ Son las que condicionan qué se puede analizar hoy con esos datos:
    supuesto a verificar en cualquier fuente nueva de CAF, porque un error de unidad acá cambia
    el resultado por seis órdenes de magnitud.
 6. **La detección de proyectos es frágil por diseño.** Depende de mayúsculas y de palabras clave
-   en el PDF; cualquier cambio de maquetación del informe la rompe. El propio la dirección del proyecto lo describió
+   en el PDF; cualquier cambio de maquetación del informe la rompe. La propia dirección del proyecto lo describió
    como "bastante rústico", con ~85% de coincidencia contra lo publicado y completado manual
    posterior.
 
@@ -72,7 +72,7 @@ producir la solución nueva y qué problemas tiene que resolver. El código en s
 
 ---
 
-## Salidas de scraping de el equipo del relevamiento anterior
+## Salidas de extracción del relevamiento anterior
 
 Sin código, pero los **resultados** sobrevivieron: `bid-invest_scrape-german-20230717.xlsx`
 y `bid-lab_scrape-german-20230816.xlsx`.

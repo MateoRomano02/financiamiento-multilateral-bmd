@@ -3,7 +3,6 @@
 Descarga el dato crudo de cada institucion desde su fuente oficial.
 
 Como se usa:
-  export CONTACTO="tu.correo@institucion.edu"    # se envia en el user-agent
   uv run python scripts/descargar_fuentes.py              # todas las fuentes
   uv run python scripts/descargar_fuentes.py caf bid      # solo algunas
 
@@ -33,9 +32,9 @@ import httpx
 RAIZ = Path(__file__).resolve().parent.parent
 CRUDO = RAIZ / "data" / "raw"
 
-# Identificarse es parte del acceso respetuoso a estos servicios: si una institucion
-# necesita contactar a quien esta consumiendo sus datos, tiene como hacerlo. El correo se
-# toma de la variable de entorno CONTACTO para que cada persona use el suyo.
+# Identificarse es parte del acceso respetuoso: si una institucion necesita contactar
+# a quien esta consumiendo su servicio, tiene como hacerlo. La direccion se toma del
+# entorno para que no quede escrita en el codigo y para que cada quien use la suya.
 CONTACTO = os.environ.get("CONTACTO", "sin-contacto-declarado")
 USER_AGENT = (
     f"proyecto-academico-UNSAM/1.0 (Licenciatura en Ciencia de Datos; contacto: {CONTACTO})"
@@ -218,6 +217,34 @@ def paginar_worldbank(cliente: httpx.Client, url_base: str) -> dict:
     return {"total": total, "descargados": len(proyectos), "projects": proyectos}
 
 
+def paginar_ndb(cliente: httpx.Client, url_base: str) -> bytes:
+    """Recorre el listado de proyectos del NDB, que sirve doce por pagina.
+
+    El sitio no declara cuantas paginas hay ni cuantos proyectos en total. Se avanza hasta que
+    una pagina no trae ninguna tarjeta. Las paginas se concatenan en un solo HTML para que el
+    perfilado las lea como un unico documento.
+    """
+    paginas: list[bytes] = []
+    numero = 1
+    while True:
+        url = url_base if numero == 1 else f"{url_base.rstrip('/')}/page/{numero}/"
+        respuesta = cliente.get(url)
+        if respuesta.status_code == 404:
+            break
+        respuesta.raise_for_status()
+        contenido = respuesta.content
+        tarjetas = contenido.count(b"project-card card")
+        if not tarjetas:
+            break
+        paginas.append(contenido)
+        print(f"    pagina {numero}: {tarjetas} proyectos", flush=True)
+        numero += 1
+        if numero > 60:  # guarda contra un listado que pagine infinito
+            print("    corte de seguridad a las 60 paginas", flush=True)
+            break
+    return b"\n<!-- pagina -->\n".join(paginas)
+
+
 def contar_registros(ruta: Path, contenido: bytes) -> int | None:
     """Cuenta registros segun el formato. Devuelve None si no se puede determinar."""
     if ruta.suffix == ".csv":
@@ -243,6 +270,12 @@ def contar_registros(ruta: Path, contenido: bytes) -> int | None:
             if isinstance(datos.get("projects"), dict):
                 return len(datos["projects"])
         return None
+    if ruta.suffix == ".html":
+        # El listado del NDB rinde una tarjeta por proyecto.
+        return contenido.count(b"project-card card")
+    if ruta.suffix == ".js":
+        # El buscador del AIIB trae un objeto JSON por proyecto.
+        return contenido.count(b'{"date"')
     return None
 
 
@@ -296,6 +329,8 @@ def descargar(fuente: Fuente, cliente: httpx.Client) -> bool:
             contenido = json.dumps(
                 paginar_worldbank(cliente, fuente.url), ensure_ascii=False
             ).encode("utf-8")
+        elif fuente.clave == "ndb_proyectos":
+            contenido = paginar_ndb(cliente, fuente.url)
         else:
             contenido = cliente.get(fuente.url, follow_redirects=True).raise_for_status().content
 
