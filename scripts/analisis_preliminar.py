@@ -31,6 +31,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from src.common.deflactor import ANIO_BASE, a_constantes  # noqa: E402
@@ -187,6 +188,69 @@ def concentracion(df: pd.DataFrame, top: int = 5) -> pd.DataFrame:
     return pd.DataFrame(filas).sort_values("pct_top5", ascending=False)
 
 
+# Países miembro de cada institución, verificados contra la documentación oficial de cada una el
+# 17 de septiembre de 2026. Son la foto de hoy y no una serie: la membrecía cambia despacio pero
+# cambia, y el AIIB en particular sumó miembros durante todo el período que analizamos.
+#
+# El BID es el único que quedó sin verificar: su sitio rechaza todo pedido automatizado con un 403,
+# incluida la página institucional y el repositorio de publicaciones. Se usa 48 porque es la cifra
+# que sí publica BID Invest para el grupo, y se marca como no verificada para que nadie la cite sin
+# revisarla.
+MIEMBROS = {
+    "BIRF": (189, "https://www.worldbank.org/en/about/leadership/members", True),
+    "IDA": (175, "https://www.worldbank.org/en/about/leadership/members", True),
+    "IFC": (186, "https://www.ifc.org/en/about", True),
+    "MIGA": (182, "https://www.miga.org/about-us", True),
+    "BID": (48, "sin fuente accesible, el sitio rechaza pedidos automatizados", False),
+    "BID Invest": (48, "https://www.idbinvest.org/en/about-us", True),
+    "CAF": (23, "https://www.caf.com/media/4677283/2506-caf-presentacion-de-inversionistas.pdf", True),
+    "AIIB": (105, "https://www.aiib.org/en/treasury/", True),  # miembros ratificados, no aprobados
+    "NDB": (10, "https://www.ndb.int/about-ndb/members/", True),
+}
+
+
+def membrecia_y_concentracion(df: pd.DataFrame, top: int = 5) -> pd.DataFrame:
+    """Cruza la concentración medida con la cantidad de países miembro de cada institución.
+
+    Pone a prueba la lectura que propuso la dirección del proyecto el 17 de septiembre de 2026:
+    "a menor membrecía, más concentración".
+
+    El cruce directo la confirma, pero una parte del efecto es mecánica y conviene separarla. Un
+    banco con diez socios no puede repartir su cartera entre ochenta países, así que su top cinco
+    va a ser alto aunque reparta de la forma más pareja posible. Por eso se agrega el **piso**: si
+    la institución llegó a `n` países y les hubiera dado exactamente lo mismo a cada uno, su top
+    cinco seria 5/n. La diferencia entre lo observado y ese piso es la concentración que NO explica
+    el tamaño del conjunto de receptores, y es la que vale la pena comparar entre bancos.
+
+    BID Lab queda fuera porque no tiene membrecía propia: es un fondo dentro del Grupo BID.
+    """
+    base = concentracion(df, top=top).set_index("institucion")
+    filas = []
+    for institucion, (miembros, fuente, verificado) in MIEMBROS.items():
+        if institucion not in base.index:
+            continue
+        fila = base.loc[institucion]
+        piso = round(100 * min(top / fila["paises"], 1.0), 1)
+        filas.append(
+            {
+                "institucion": institucion,
+                "miembros": miembros,
+                "verificado": "sí" if verificado else "NO",
+                "paises_receptores": int(fila["paises"]),
+                "pct_top5": fila["pct_top5"],
+                "piso_si_repartiera_parejo": piso,
+                "exceso_sobre_el_piso": round(fila["pct_top5"] - piso, 1),
+                "fuente": fuente,
+            }
+        )
+    return pd.DataFrame(filas).sort_values("miembros")
+
+
+def spearman(a: pd.Series, b: pd.Series) -> float:
+    """Correlación de rangos, que es Pearson sobre los rangos. Evita depender de scipy."""
+    return a.rank().corr(b.rank())
+
+
 # ---------------------------------------------------------------------------
 # 3. Composición de cartera
 # ---------------------------------------------------------------------------
@@ -288,6 +352,14 @@ def main() -> int:
              ventanillas(largo, desde=1989))
     imprimir("Operaciones sin monto publicado", sin_monto(df).head(20))
     imprimir("Concentración de los primeros cinco países receptores", concentracion(df))
+
+    memb = membrecia_y_concentracion(df)
+    imprimir("Membrecía contra concentración", memb.drop(columns="fuente"))
+    print(f"\n  Spearman entre miembros y concentración: {spearman(memb.miembros, memb.pct_top5):+.3f} "
+          f"(n={len(memb)})")
+    print(f"  Pearson contra el logaritmo de los miembros: {np.log(memb.miembros).corr(memb.pct_top5):+.3f}")
+    print(f"  Spearman entre miembros y el exceso sobre el piso: "
+          f"{spearman(memb.miembros, memb.exceso_sobre_el_piso):+.3f}")
     imprimir("Velocidad: días entre aprobación y firma", velocidad())
 
     comp = composicion(df)
