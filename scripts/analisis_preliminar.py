@@ -3,7 +3,8 @@
 Produce las tablas del primer informe de resultados. Cada análisis responde a algo concreto que
 alguien pidió o que la bibliografía del proyecto usa como vocabulario común:
 
-1. **Ventanillas soberanas contra no soberanas.** Desde 2014 las ventanillas que prestan al sector privado deberían haber
+1. **Ventanillas soberanas contra no soberanas.** Es la hipótesis que planteó la dirección en la
+   reunión de inicio: desde 2014 las ventanillas que prestan al sector privado deberían haber
    crecido frente a las soberanas, porque el paradigma vigente empuja el financiamiento privado.
 
 2. **Concentración de los primeros cinco países.** Es la métrica que usan tres de los cinco textos
@@ -32,6 +33,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pandas as pd  # noqa: E402
 
+from src.common.deflactor import ANIO_BASE, a_constantes  # noqa: E402
+
 RAIZ = Path(__file__).resolve().parent.parent
 PROCESADO = RAIZ / "data" / "processed"
 COMPOSICION = PROCESADO / "composicion-por-banco"
@@ -39,10 +42,14 @@ COMPOSICION = PROCESADO / "composicion-por-banco"
 # Las ventanillas que prestan al sector privado dentro de cada grupo, y su par soberano.
 # La comparación solo tiene sentido dentro del mismo grupo bancario: comparar la IFC contra el
 # BID mezclaría el efecto del paradigma con el del tamaño de cada institución.
+# MIGA emite garantías y BID Lab financia cooperación técnica, así que ninguna de las dos es
+# inequívocamente una ventanilla no soberana. Por indicación de la dirección del proyecto quedan
+# fuera de las dos categorías, sin sumar a ninguna, en lugar de forzarlas a una.
 PARES = {
-    "Grupo Banco Mundial": {"soberana": ["BIRF", "IDA"], "no_soberana": ["IFC", "MIGA"]},
-    "Grupo BID": {"soberana": ["BID"], "no_soberana": ["BID Invest", "BID Lab"]},
+    "Grupo Banco Mundial": {"soberana": ["BIRF", "IDA"], "no_soberana": ["IFC"]},
+    "Grupo BID": {"soberana": ["BID"], "no_soberana": ["BID Invest"]},
 }
+EXCLUIDAS_DE_VENTANILLA = ("MIGA", "BID Lab")
 
 
 def a_markdown(tabla: pd.DataFrame) -> str:
@@ -55,11 +62,17 @@ def a_markdown(tabla: pd.DataFrame) -> str:
     )
 
 
-def cargar() -> pd.DataFrame:
-    ruta = PROCESADO / "corpus_2014_2025.csv"
+def cargar(completo: bool = False) -> pd.DataFrame:
+    """El corpus consolidado, con la columna en dólares constantes agregada."""
+    nombre = "corpus_completo.csv" if completo else "corpus_2014_2025.csv"
+    ruta = PROCESADO / nombre
     if not ruta.exists():
         raise SystemExit("falta el corpus. Correr antes: uv run python scripts/consolidar.py")
-    return pd.read_csv(ruta)
+    df = pd.read_csv(ruta, low_memory=False)
+    df["monto_constante_usd"] = [
+        a_constantes(m, a) for m, a in zip(df["monto_aprobado_usd"], df["anio_aprobacion"])
+    ]
+    return df
 
 
 # ---------------------------------------------------------------------------
@@ -67,15 +80,23 @@ def cargar() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 
-def ventanillas(df: pd.DataFrame) -> pd.DataFrame:
-    """Participación anual de la ventanilla no soberana sobre el total de cada grupo."""
+def ventanillas(df: pd.DataFrame, desde: int = 2014, constantes: bool = False) -> pd.DataFrame:
+    """Participación anual de la ventanilla no soberana sobre el total de cada grupo.
+
+    `constantes` expresa los montos en dólares del año base aplicando el deflactor del PBI de
+    Estados Unidos. La participación porcentual no cambia al deflactar, porque numerador y
+    denominador son del mismo año: lo que cambia son los niveles, y por eso conviene reportar
+    las dos tablas.
+    """
+    columna = "monto_constante_usd" if constantes else "monto_aprobado_usd"
+    df = df[~topes_de_facilidad_repetidos(df)]
     filas = []
     for grupo, lados in PARES.items():
         todas = lados["soberana"] + lados["no_soberana"]
-        sub = df[df["institucion"].isin(todas) & df["monto_aprobado_usd"].notna()]
+        sub = df[df["institucion"].isin(todas) & df[columna].notna() & (df["anio_aprobacion"] >= desde)]
         for anio, tramo in sub.groupby("anio_aprobacion"):
-            sob = tramo[tramo["institucion"].isin(lados["soberana"])]["monto_aprobado_usd"].sum()
-            nos = tramo[tramo["institucion"].isin(lados["no_soberana"])]["monto_aprobado_usd"].sum()
+            sob = tramo[tramo["institucion"].isin(lados["soberana"])][columna].sum()
+            nos = tramo[tramo["institucion"].isin(lados["no_soberana"])][columna].sum()
             total = sob + nos
             if not total:
                 continue
@@ -89,6 +110,35 @@ def ventanillas(df: pd.DataFrame) -> pd.DataFrame:
                 }
             )
     return pd.DataFrame(filas)
+
+
+def topes_de_facilidad_repetidos(df: pd.DataFrame, minimo: int = 10) -> pd.Series:
+    """Marca las filas donde una misma institución repite el mismo monto muchas veces en un año.
+
+    Es la firma de una facilidad marco cuyo tope se anota entero en cada línea participante, en
+    lugar de la exposición individual. El caso que lo motivó es el programa de trade finance de la
+    IFC: en 2004 hay 57 operaciones con USD 7.000 millones cada una, que es el tope del programa
+    completo. Sumadas dan el 99% del total de la IFC de ese año y el 54% de toda su historia.
+
+    No es un error de la normalización sino de cómo la fuente publica esas operaciones. Se detecta
+    de forma mecánica, sin nombrar programas, para que sirva también en casos que no conocemos.
+    """
+    clave = df.groupby(["institucion", "anio_aprobacion", "monto_aprobado_usd"])["id_proyecto"].transform("size")
+    return (clave >= minimo) & df["monto_aprobado_usd"].notna() & (df["monto_aprobado_usd"] > 0)
+
+
+def sin_monto(df: pd.DataFrame) -> pd.DataFrame:
+    """Las operaciones sin monto, una por fila, para poder rastrearlas a mano.
+
+    La dirección del proyecto las pidió con banco, año y operación para facilitar el rastreo
+    cualitativo: son los casos donde la fuente no publica la cifra y hay que ir al documento.
+    """
+    falta = df[df["monto_aprobado_usd"].isna()]
+    return (
+        falta[["institucion", "anio_aprobacion", "id_proyecto", "nombre", "pais", "url_proyecto"]]
+        .assign(anio_aprobacion=lambda d: d["anio_aprobacion"].astype("Int64"))
+        .sort_values(["institucion", "anio_aprobacion"])
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +280,13 @@ def main() -> int:
 
     print(f"Corpus: {len(df):,} operaciones, 2014 a 2025, sin canceladas.")
 
-    imprimir("Ventanilla no soberana sobre el total de cada grupo", ventanillas(df))
+    imprimir("Ventanilla no soberana, dólares corrientes (2014-2025)", ventanillas(df))
+    imprimir(f"Ventanilla no soberana, dólares constantes de {ANIO_BASE} (2014-2025)",
+             ventanillas(df, constantes=True))
+    largo = cargar(completo=True)
+    imprimir("Ventanilla no soberana, serie larga desde 1989 (corrientes)",
+             ventanillas(largo, desde=1989))
+    imprimir("Operaciones sin monto publicado", sin_monto(df).head(20))
     imprimir("Concentración de los primeros cinco países receptores", concentracion(df))
     imprimir("Velocidad: días entre aprobación y firma", velocidad())
 
@@ -243,6 +299,12 @@ def main() -> int:
             nombre = str(institucion).lower().replace(" ", "-")
             tramo.to_csv(COMPOSICION / f"{nombre}.csv", index=False)
         print(f"\nComposición por banco escrita en {COMPOSICION.relative_to(RAIZ)}/")
+
+        # La tabla completa de operaciones sin monto va como archivo aparte: la dirección la pidió
+        # para poder ir al documento de cada una, y eso no se hace mirando las primeras veinte.
+        faltantes = COMPOSICION.parent / "operaciones-sin-monto.csv"
+        sin_monto(df).to_csv(faltantes, index=False)
+        print(f"Operaciones sin monto escritas en {faltantes.relative_to(RAIZ)}")
 
     return 0
 

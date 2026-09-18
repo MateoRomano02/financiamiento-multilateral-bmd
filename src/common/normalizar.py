@@ -36,6 +36,7 @@ from pathlib import Path
 import pandas as pd
 
 from .esquema import COLUMNAS, VENTANILLA_POR_INSTITUCION
+from .tipo_de_cambio import a_dolares, normalizar_moneda
 
 RAIZ = Path(__file__).resolve().parent.parent.parent
 CRUDO = RAIZ / "data" / "raw"
@@ -445,10 +446,26 @@ def normalizar_aiib(ruta: Path, relevamiento: str) -> pd.DataFrame:
 
 
 def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
-    """NDB. Es la única fuente sin archivo ni servicio, y la única que no publica monto."""
+    """NDB. El listado no publica montos, pero la ficha de cada proyecto sí.
+
+    Lo señaló la dirección del proyecto el 17 de septiembre de 2026, y resultó cierto: hay que
+    pedir una página por proyecto, pero el dato está. Con eso el NDB deja de ser la única
+    institución del corpus sin ninguna cifra.
+
+    El sitio usa dos formatos según el estado. Los proyectos aprobados publican el aporte del
+    banco en una tabla de aportantes; los que están en concepto publican un "límite propuesto de
+    financiamiento", que es un tope previsto y no un monto aprobado. Se distinguen, porque
+    tratarlos igual inflaría la cartera con operaciones que todavía no se aprobaron.
+    """
     texto = ruta.read_text(encoding="utf-8", errors="replace")
     bloques = re.findall(r'<div class="project-card card[^"]*">(.*?)\n</div>', texto, re.S)
     url = "https://www.ndb.int/projects/all-projects/"
+
+    # Los montos vienen de la descarga de fichas individuales, que es un archivo aparte.
+    detalle: dict[str, dict] = {}
+    fichas = sorted((ruta.parent).glob("ndb_montos_*.json"))
+    if fichas:
+        detalle = {d["url"].rstrip("/"): d for d in json.loads(fichas[-1].read_text(encoding="utf-8"))}
 
     def campo(patron: str, bloque: str) -> str:
         m = re.search(patron, bloque, re.S)
@@ -457,18 +474,46 @@ def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
     filas = []
     for b in bloques:
         enlace = re.search(r'class="card-link" href="([^"]+)"', b)
+        proyecto = enlace.group(1) if enlace else ""
         tipo = campo(r'class="project-card-type text-medium-bold">(.*?)</div>', b)
+        ficha = detalle.get(proyecto.rstrip("/"), {})
+
+        # El monto aprobado sale de la tabla de aportantes o de la etiqueta de financiamiento;
+        # el límite propuesto solo aplica a los que siguen en etapa de concepto.
+        aprobado, moneda_apr = monto_desde_texto(ficha.get("monto_ndb") or ficha.get("monto_aprobado"))
+        propuesto, moneda_prop = monto_desde_texto(ficha.get("monto_propuesto"))
+        en_concepto = aprobado is None and propuesto is not None
+
+        monto = propuesto if en_concepto else aprobado
+        moneda = moneda_prop if en_concepto else moneda_apr
+
+        fecha = (a_fecha(ficha.get("fecha_aprobacion"))
+                 or a_fecha(ficha.get("fecha_concepto"))
+                 or a_fecha(campo(r'class="project-card-date text-small-bold">(.*?)</div>', b)))
+
+        # El NDB presta buena parte de su cartera en moneda local: rand, yuanes, rupias, reales y
+        # euros. Lo advirtio la direccion del proyecto el 17 de septiembre de 2026 y el dato lo
+        # confirma: 44 de 146 operaciones. Tomarlas como dolares multiplicaba la cartera por
+        # cinco. Se convierten con el promedio anual del año de aprobacion, y el monto original se
+        # conserva con su moneda para que la conversion sea auditable.
+        moneda = normalizar_moneda(moneda)
+        anio = int(fecha[:4]) if fecha else None
+        en_dolares = a_dolares(monto, moneda, anio)
+
         filas.append(
             {**_fila_base("NDB", "NDB", url, relevamiento),
              "tipo_ventanilla": "soberana" if tipo == "Sovereign" else "no_soberana",
-             "id_proyecto": enlace.group(1) if enlace else "",
+             "id_proyecto": proyecto,
              "nombre": campo(r'class="project-card-title[^"]*">(.*?)</div>', b),
              "pais": campo(r'class="project-card-country text-small-bold">(.*?)</div>', b),
-             "url_proyecto": enlace.group(1) if enlace else None,
-             "fecha_aprobacion": a_fecha(campo(r'class="project-card-date text-small-bold">(.*?)</div>', b)),
-             # El listado no publica estado ni monto en ninguna forma.
-             "estado": "desconocido",
-             "estado_original": None,
+             "url_proyecto": proyecto or None,
+             "fecha_aprobacion": fecha,
+             # El listado no declara estado; se deriva de qué publica la ficha.
+             "estado": "propuesto" if en_concepto else ("aprobado" if aprobado is not None else "desconocido"),
+             "estado_original": "Concept" if en_concepto else ("Approved" if aprobado is not None else None),
+             "monto_aprobado_usd": en_dolares,
+             "monto_original": monto,
+             "moneda_original": moneda,
              "instrumento": tipo,
              "sector": campo(r'class="project-card-cat text-small-bold">(.*?)</div>', b)}
         )
