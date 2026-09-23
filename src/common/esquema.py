@@ -32,6 +32,10 @@ COLUMNAS: tuple[str, ...] = (
     "monto_desembolsado_usd", # float, unidades de dolar; nulo si el banco no lo publica
     "moneda_original",        # ISO 4217
     "monto_original",         # float, en moneda_original
+    # Costo total del proyecto, no solo el aporte del banco. Lo pidio la direccion el 18/09/2026
+    # para poder medir que proporcion de cada proyecto financia la institucion. Hoy solo lo
+    # publica el NDB, en 37 de sus 170 fichas, y el BID, en su propio archivo.
+    "costo_total_proyecto_usd",
     # Clasificacion del banco
     "instrumento",            # prestamo, garantia, inversion de capital, cooperacion tecnica...
     "sector",                 # sector tal cual lo clasifica el banco

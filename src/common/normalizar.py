@@ -330,6 +330,11 @@ def normalizar_bid(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "estado": mapear_estado("bid", r.get("publc_sts_nm")),
              "estado_original": r.get("publc_sts_nm"),
              "monto_aprobado_usd": a_numero(r.get("orig_apprvd_useq_amnt")),
+             # El BID es la unica fuente del corpus que publica el costo total del proyecto como
+             # campo estructurado, en 27.286 de sus 27.329 filas. La direccion lo pidio el 18/09
+             # para poder medir que proporcion de cada proyecto pone el banco y cuanta contraparte
+             # local aporta el pais. El NDB lo trae en prosa y solo en 37 de 170 fichas.
+             "costo_total_proyecto_usd": a_numero(r.get("totl_cost_orig")),
              "instrumento": r.get("opertyp_nm"),
              "sector": (r.get("sector_nm") or "").strip() or None}
         )
@@ -426,6 +431,7 @@ def normalizar_aiib(ruta: Path, relevamiento: str) -> pd.DataFrame:
     for r in registros:
         monto, moneda = monto_desde_texto(r.get("approved_funding"))
         ventanilla = "soberana" if str(r.get("financing_type", "")).lower().startswith("sover") else "no_soberana"
+        fecha = a_fecha(r.get("date"))
         filas.append(
             {**_fila_base("AIIB", "AIIB", url, relevamiento),
              "tipo_ventanilla": ventanilla,
@@ -434,12 +440,15 @@ def normalizar_aiib(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "pais": r.get("economy"),
              "url_proyecto": f"https://www.aiib.org{r.get('path', '')}",
              # El AIIB publica solo el año de aprobación, no la fecha.
-             "fecha_aprobacion": a_fecha(r.get("date")),
+             "fecha_aprobacion": fecha,
              "estado": mapear_estado("aiib", r.get("status")),
              "estado_original": r.get("status"),
-             "monto_aprobado_usd": monto if moneda == "USD" else None,
+             # 12 de las 338 operaciones con monto estan en euros. Hasta el 23 de septiembre de
+             # 2026 se descartaban, asi que quedaban fuera de toda suma sin que nada lo avisara.
+             # Se convierten con el mismo criterio que el NDB.
+             "monto_aprobado_usd": a_dolares(monto, moneda, int(fecha[:4]) if fecha else None),
              "monto_original": monto,
-             "moneda_original": moneda,
+             "moneda_original": normalizar_moneda(moneda),
              "sector": r.get("sector")}
         )
     return _cerrar(filas)
@@ -500,6 +509,11 @@ def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
         anio = int(fecha[:4]) if fecha else None
         en_dolares = a_dolares(monto, moneda, anio)
 
+        # Costo total del proyecto, pedido por la direccion el 18/09 para saber que proporcion
+        # pone el banco. Solo 37 de las 170 fichas lo traen y siempre en prosa, nunca como campo.
+        costo, moneda_costo = monto_desde_texto(ficha.get("costo_total"))
+        costo_usd = a_dolares(costo, normalizar_moneda(moneda_costo), anio)
+
         filas.append(
             {**_fila_base("NDB", "NDB", url, relevamiento),
              "tipo_ventanilla": "soberana" if tipo == "Sovereign" else "no_soberana",
@@ -514,6 +528,7 @@ def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "monto_aprobado_usd": en_dolares,
              "monto_original": monto,
              "moneda_original": moneda,
+             "costo_total_proyecto_usd": costo_usd,
              "instrumento": tipo,
              "sector": campo(r'class="project-card-cat text-small-bold">(.*?)</div>', b)}
         )

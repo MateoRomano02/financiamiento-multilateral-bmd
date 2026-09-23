@@ -57,6 +57,23 @@ def monto_de_la_ficha(pagina: str) -> dict:
 
     Los dos se devuelven en campos separados, porque no significan lo mismo y mezclarlos inflaria
     la cartera con operaciones que todavia no se aprobaron.
+
+    **Las etiquetas estan enumeradas, no adivinadas.** Se recorrieron las 170 fichas listando toda
+    etiqueta que precede a un monto, en lugar de buscar la que esperabamos encontrar. El NDB usa
+    tres para el aporte del banco y significan cosas distintas:
+
+    - "Current Limit of NDB Financing": 126 fichas. Limite vigente, ya aprobado.
+    - "Proposed Limit of NDB Financing": 31 fichas. Todavia no aprobado.
+    - "Initial Limit of NDB Financing": 1 ficha. Aprobado originalmente, sin revisar.
+
+    Ninguna ficha trae dos de las tres a la vez, verificado sobre las 170, asi que no hay que
+    decidir cual gana. Si en una descarga futura aparecieran juntas, **manda la vigente**: es la
+    que refleja el compromiso de hoy.
+
+    **El costo total del proyecto no es un campo.** La direccion lo pidio el 18 de septiembre de
+    2026 para poder calcular que proporcion de cada proyecto pone el banco. Aparece en apenas 37 de
+    las 170 fichas y siempre dentro de una frase, no como dato etiquetado. Se captura donde esta y
+    se declara la cobertura, porque con el 22% no se puede construir una serie.
     """
     limpio = re.sub(r"<script.*?</script>|<style.*?</style>", "", pagina, flags=re.S)
     plano = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", limpio)))
@@ -65,6 +82,8 @@ def monto_de_la_ficha(pagina: str) -> dict:
     monto = r"((?:USD|EUR|CNY|RMB|ZAR|INR|BRL|RUB)\s?[\d.,]+(?:\s?(?:million|billion))?)"
     etiquetas = {
         "monto_propuesto": rf"Proposed Limit of NDB Financing\s*{monto}",
+        # En prosa, no como campo. Solo 37 de 170 fichas lo traen.
+        "costo_total": rf"(?:total cost of the Project is estimated at|Project is estimated to be|Total Project Cost)\s*{monto}",
         "monto_aprobado": rf"(?<!Proposed Limit of )NDB Financing\s*{monto}",
         "fecha_aprobacion": r"(?<!Concept )Approval Date\s*(\d{1,2} [A-Za-z]+ \d{4})",
         "fecha_concepto": r"Concept Approval Date\s*(\d{1,2} [A-Za-z]+ \d{4})",
@@ -82,6 +101,8 @@ def monto_de_la_ficha(pagina: str) -> dict:
                 resultado["monto_ndb"] = campos[1].strip()
             elif "other sources" in campos[0].lower():
                 resultado["monto_otras_fuentes"] = campos[1].strip()
+            elif campos[0].strip().lower() in ("total", "total project cost"):
+                resultado.setdefault("costo_total", campos[1].strip())
     return resultado
 
 

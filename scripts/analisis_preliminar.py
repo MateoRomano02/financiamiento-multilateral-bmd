@@ -252,6 +252,125 @@ def spearman(a: pd.Series, b: pd.Series) -> float:
 
 
 # ---------------------------------------------------------------------------
+# 2b. Analisis pedidos por la direccion el 18 y el 22 de septiembre de 2026
+# ---------------------------------------------------------------------------
+
+# Paises de America Latina y el Caribe. La direccion pidio el 22/09 separar ALC del resto en los
+# bancos globales, porque un banco que presta en todo el mundo y uno regional no son comparables
+# sin ese recorte.
+#
+# El mapeo es NUESTRO y se aplica igual a todas las fuentes, a proposito. Cada banco publica su
+# propia agrupacion regional y usarlas mezcladas reproduciria en la geografia el mismo problema
+# que ya tenemos con los sectores: categorias que se llaman parecido y no miden lo mismo.
+PAISES_ALC = frozenset({
+    "Antigua and Barbuda", "Argentina", "Bahamas", "Bahamas, The", "Barbados", "Belize",
+    "Bolivia", "Brazil", "Chile", "Colombia", "Costa Rica", "Cuba", "Dominica",
+    "Dominican Republic", "Ecuador", "El Salvador", "Grenada", "Guatemala", "Guyana", "Haiti",
+    "Honduras", "Jamaica", "Mexico", "Nicaragua", "Panama", "Paraguay", "Peru",
+    "St. Kitts and Nevis", "St. Lucia", "St. Vincent and the Grenadines", "Suriname",
+    "Trinidad and Tobago", "Uruguay", "Venezuela", "Venezuela, RB",
+})
+
+RE_ALC_AGREGADO = re.compile(
+    r"\b(Latin America|Caribbean|Central America|South America|LAC)\b", re.I)
+
+
+def region_de(pais: object) -> str:
+    """Clasifica el receptor en ALC, resto del mundo, o agregado sin pais.
+
+    Los agregados regionales se separan en dos porque no son lo mismo: "Caribbean Subregion" si
+    dice algo sobre ALC, "Africa Region" no.
+    """
+    texto = str(pais or "").strip()
+    if not texto:
+        return "sin dato"
+    if texto in PAISES_ALC:
+        return "ALC"
+    if RE_ALC_AGREGADO.search(texto):
+        return "ALC (agregado regional)"
+    if not es_pais_real(texto):
+        return "otro agregado regional"
+    return "resto del mundo"
+
+
+def por_region(df: pd.DataFrame) -> pd.DataFrame:
+    """Cuanto de la cartera de cada institucion va a America Latina y el Caribe."""
+    d = df[df["monto_aprobado_usd"].notna()].copy()
+    d["region"] = d["pais"].apply(region_de)
+    tabla = d.pivot_table(index="institucion", columns="region", values="monto_aprobado_usd",
+                          aggfunc="sum", fill_value=0.0) / 1e6
+    alc = tabla.get("ALC", 0) + tabla.get("ALC (agregado regional)", 0)
+    tabla["pct_alc"] = (100 * alc / tabla.sum(axis=1)).round(1)
+    return tabla.round(0).sort_values("pct_alc", ascending=False)
+
+
+def moneda_local(df: pd.DataFrame) -> pd.DataFrame:
+    """Proporcion de operaciones denominadas en moneda local, por institucion.
+
+    Lo pidio la direccion del proyecto el 22/09, en cantidad y en monto. Solo se puede contestar para las cuatro
+    fuentes que declaran la moneda de origen: BID Invest, CAF, AIIB y NDB. Las otras seis informan
+    en dolares sin decir si hubo conversion, asi que para ellas la pregunta no tiene respuesta con
+    estas fuentes y eso tambien es un dato.
+    """
+    filas = []
+    for institucion, tramo in df[df["moneda_original"].notna()].groupby("institucion"):
+        local = tramo[tramo["moneda_original"] != "USD"]
+        monto_total = tramo["monto_aprobado_usd"].sum()
+        filas.append({
+            "institucion": institucion,
+            "ops_con_moneda": len(tramo),
+            "ops_en_moneda_local": len(local),
+            "pct_ops": round(100 * len(local) / len(tramo), 1),
+            "pct_monto": round(100 * local["monto_aprobado_usd"].sum() / monto_total, 1) if monto_total else 0.0,
+            "monedas": ", ".join(sorted(local["moneda_original"].dropna().unique())[:8]),
+        })
+    return pd.DataFrame(filas).sort_values("pct_ops", ascending=False)
+
+
+def aporte_del_banco(df: pd.DataFrame) -> pd.DataFrame:
+    """Que proporcion del costo total del proyecto pone el banco.
+
+    Pedido de la direccion el 18/09 para el NDB ("75 sobre 300 no es lo mismo que 75 sobre 100") y
+    de la direccion el 22/09 para el costo de contraparte. Solo lo permiten el BID, que publica el
+    costo total como campo, y el NDB, que lo trae en prosa en 37 de sus 170 fichas.
+    """
+    d = df[df["costo_total_proyecto_usd"].notna() & df["monto_aprobado_usd"].notna()]
+    d = d[d["costo_total_proyecto_usd"] > 0]
+    filas = []
+    for institucion, tramo in d.groupby("institucion"):
+        proporcion = tramo["monto_aprobado_usd"] / tramo["costo_total_proyecto_usd"]
+        proporcion = proporcion[proporcion <= 1.5]  # descarta filas donde el costo esta mal cargado
+        filas.append({
+            "institucion": institucion,
+            "operaciones": len(proporcion),
+            "aporte_banco_mm": round(tramo["monto_aprobado_usd"].sum() / 1e6),
+            "costo_total_mm": round(tramo["costo_total_proyecto_usd"].sum() / 1e6),
+            "contraparte_mm": round((tramo["costo_total_proyecto_usd"] - tramo["monto_aprobado_usd"]).sum() / 1e6),
+            "pct_mediana_del_banco": round(100 * proporcion.median(), 1),
+            "pct_financia_todo": round(100 * (proporcion >= 0.99).mean(), 1),
+        })
+    return pd.DataFrame(filas)
+
+
+def tamano_medio(df: pd.DataFrame, desde: int = 2014) -> pd.DataFrame:
+    """Monto medio y mediano por operacion y anio, dentro de cada grupo y ventanilla.
+
+    La direccion lo sugirio el 22/09 como control complementario del argumento de que la suba de la
+    ventanilla privada es de base amplia: si el monto medio se dispara, la suba vendria de
+    operaciones mas grandes y no de mas operaciones.
+    """
+    d = df[(df["anio_aprobacion"] >= desde) & df["monto_aprobado_usd"].notna()]
+    d = d[d["institucion"].isin(["BID", "BID Invest"])]
+    return (
+        d.groupby(["institucion", "anio_aprobacion"])
+        .agg(operaciones=("id_proyecto", "size"),
+             monto_medio_mm=("monto_aprobado_usd", lambda s: round(s.mean() / 1e6, 1)),
+             monto_mediano_mm=("monto_aprobado_usd", lambda s: round(s.median() / 1e6, 1)))
+        .reset_index()
+    )
+
+
+# ---------------------------------------------------------------------------
 # 3. Composición de cartera
 # ---------------------------------------------------------------------------
 
@@ -361,6 +480,10 @@ def main() -> int:
     print(f"  Spearman entre miembros y el exceso sobre el piso: "
           f"{spearman(memb.miembros, memb.exceso_sobre_el_piso):+.3f}")
     imprimir("Velocidad: días entre aprobación y firma", velocidad())
+    imprimir("Préstamos en moneda local", moneda_local(df))
+    imprimir("Aporte del banco sobre el costo total del proyecto", aporte_del_banco(df))
+    imprimir("Destino: América Latina y el Caribe contra el resto", por_region(df).reset_index())
+    imprimir("Tamaño medio de operación en el Grupo BID", tamano_medio(df))
 
     comp = composicion(df)
     imprimir("Composición de cartera (muestra)", comp.head(15))
