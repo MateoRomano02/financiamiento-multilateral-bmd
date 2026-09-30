@@ -9,6 +9,36 @@
       "bytes": 206198,
       "registros": null,
       "descripcion": "Conjunto que alimenta el buscador de AIIB. OJO CON LA LICENCIA: AIIB prohibe obra derivada sin consentimiento escrito, ver docs/accesos-a-los-datos.md."
+    },
+    {
+      "archivo": "aiib_proyectos_2026-09-29.js",
+      "institucion": "AIIB",
+      "url_origen": "https://www.aiib.org/en/projects/list/.content/all-projects-data.js",
+      "fecha_descarga": "2026-09-30T00:50:29+00:00",
+      "bytes": 213832,
+      "registros": 482,
+      "descripcion": "Conjunto que alimenta el buscador de AIIB. OJO CON LA LICENCIA: AIIB prohibe obra derivada sin consentimiento escrito, ver docs/accesos-a-los-datos.md.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "aiib_proyectos_2026-09-29.js",
+      "institucion": "AIIB",
+      "url_origen": "https://www.aiib.org/en/projects/list/.content/all-projects-data.js",
+      "fecha_descarga": "2026-09-30T00:53:44+00:00",
+      "bytes": 213832,
+      "registros": 482,
+      "descripcion": "Conjunto que alimenta el buscador de AIIB. OJO CON LA LICENCIA: AIIB prohibe obra derivada sin consentimiento escrito, ver docs/accesos-a-los-datos.md.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "aiib_proyectos_2026-09-29.js",
+      "institucion": "AIIB",
+      "url_origen": "https://www.aiib.org/en/projects/list/.content/all-projects-data.js",
+      "fecha_descarga": "2026-09-30T00:56:27+00:00",
+      "bytes": 213832,
+      "registros": 482,
+      "descripcion": "Conjunto que alimenta el buscador de AIIB. OJO CON LA LICENCIA: AIIB prohibe obra derivada sin consentimiento escrito, ver docs/accesos-a-los-datos.md.",
+      "version_endpoint": null
     }
   ]
 }

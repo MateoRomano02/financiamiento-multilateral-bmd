@@ -1,4 +1,4 @@
-"""Consolida las ocho fuentes en el corpus armonizado y lo valida.
+"""Consolida las fuentes en el corpus armonizado y lo valida.
 
 Lee las descargas fechadas de `data/raw/`, las normaliza al esquema común y escribe el corpus
 en `data/processed/`. Es el paso que convierte ocho formatos distintos en una sola tabla sobre
@@ -40,7 +40,7 @@ def periodo_de_analisis(df: pd.DataFrame) -> pd.DataFrame:
 def main() -> int:
     SALIDA.mkdir(parents=True, exist_ok=True)
 
-    print("Normalizando las ocho fuentes...")
+    print("Normalizando las fuentes...")
     corpus = normalizar_todo()
     analisis = periodo_de_analisis(corpus)
 
@@ -62,10 +62,11 @@ def main() -> int:
     )
     print(resumen.to_string(index=False))
 
-    # Huecos conocidos, documentados en docs/resumen-de-variables.md. No son fallas del
-    # pipeline sino limites de la fuente: el NDB no publica monto en ninguna forma, y varias
-    # operaciones regionales de CAF y BID Invest no tienen un pais receptor unico.
-    HUECOS_CONOCIDOS = ("pais: ", "monto_aprobado_usd: ")
+    # Huecos conocidos, documentados en docs/resumen-de-variables.md y en el informe de calidad.
+    # No son fallas del pipeline sino limites de la fuente: operaciones cuyo monto la fuente no
+    # publica en ninguno de los campos o etiquetas revisados, operaciones sin pais receptor, y
+    # sobredesembolsos que la fuente registra por encima del compromiso publicado.
+    HUECOS_CONOCIDOS = ("pais: ", "monto_aprobado_usd: ", "sobredesembolso: ")
 
     print("\nValidaciones sobre el período de análisis:")
     fallas = 0
@@ -82,7 +83,7 @@ def main() -> int:
 
     sin_monto = analisis[analisis["monto_aprobado_usd"].isna()]
     if not sin_monto.empty:
-        print("\n  Operaciones sin monto, por institución (la fuente no lo publica):")
+        print("\n  Operaciones sin monto, por institución (el campo que usa el corpus viene vacío en la fuente):")
         for inst, n in sin_monto["institucion"].value_counts().items():
             print(f"    {inst:<12} {n:>4}")
 

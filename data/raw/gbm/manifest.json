@@ -10,6 +10,206 @@
       "registros": 28081,
       "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255 (verificado el 21/08/2026).",
       "version_endpoint": "v3"
+    },
+    {
+      "archivo": "birf-ida_proyectos_2026-09-15.json",
+      "institucion": "BIRF/IDA",
+      "url_origen": "https://search.worldbank.org/api/v3/projects?format=json&rows=1000&fl=id,proj_id,project_name,project_abstract,countryname,countrycode,countryshortname,regionname,boardapprovaldate,closingdate,approvalfy,status,totalamt,curr_total_commitment,curr_ibrd_commitment,idacommamt,grantamt,lendprojectcost,borrower,impagency,mjsector,major_sectors,major_sector_name,sectorcode,esrc_ovrl_risk_rate,envassesmentcategorycode,cons_serv_reqd_ind,teamleadname",
+      "fecha_descarga": "2026-09-15T20:15:02+00:00",
+      "bytes": 52261119,
+      "registros": 28113,
+      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255 (verificado el 21/08/2026).",
+      "version_endpoint": "v3"
+    },
+    {
+      "archivo": "ibrd-statement-of-loans_2026-09-29.csv",
+      "institucion": "BIRF",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00047&resourceId=RS00005&type=json",
+      "fecha_descarga": "2026-09-29T21:18:00-03:00",
+      "bytes": 3037929,
+      "registros": 9518,
+      "descripcion": "WBG Finances One, dataset DS00047 'IBRD Statement of Loans and Guarantees - Latest Available Snapshot', recurso RS00005. Una fila por prestamo/garantia vigente en el sistema (no historico mes a mes). data_as_of de la fuente: 2026-08-31. Paginado con top/skip, 2000 filas por pagina.",
+      "version_endpoint": "apiservice"
+    },
+    {
+      "archivo": "ida-statement-of-credits_2026-09-29.csv",
+      "institucion": "IDA",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00001&resourceId=RS00001&type=json",
+      "fecha_descarga": "2026-09-29T21:18:00-03:00",
+      "bytes": 3533486,
+      "registros": 11447,
+      "descripcion": "WBG Finances One, dataset DS00001 'IDA Statement of Credits, Grants and Guarantees - Latest Available Snapshot', recurso RS00001. Una fila por credito/garantia vigente en el sistema, mezcla creditos (prefijo IDA/IDAN/IDAA/IDAS/IDAF), grants (IDAD/IDAH/IDAE) y garantias (IDAB/IDAG). data_as_of de la fuente: 2026-08-31. Paginado con top/skip, 2000 filas por pagina.",
+      "version_endpoint": "apiservice"
+    },
+    {
+      "archivo": "desembolsos_por_proyecto_2026-09-29.csv",
+      "institucion": "BIRF/IDA",
+      "url_origen": "derivado de ibrd-statement-of-loans_2026-09-29.csv e ida-statement-of-credits_2026-09-29.csv",
+      "fecha_descarga": "2026-09-29T21:20:00-03:00",
+      "bytes": 941093,
+      "registros": 15316,
+      "descripcion": "Agregacion propia a nivel (project_id, ventanilla): cantidad de prestamos, monto original, desembolsado, no desembolsado y cancelado, sumados sobre las dos fuentes de arriba. Ver research/desembolsos-banco-mundial.md para el metodo completo.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ibrd_prestamos_2026-09-29.json",
+      "institucion": "BIRF, estado de prestamos",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00047&resourceId=RS00005&type=json&top=20000",
+      "fecha_descarga": "2026-09-30T00:32:17+00:00",
+      "bytes": 12770775,
+      "registros": 9518,
+      "descripcion": "IBRD Statement of Loans and Guarantees, ultima foto disponible, via Finances One. Una fila por prestamo, con monto original, desembolsado, no desembolsado y cancelado. Es la fuente de los desembolsos del BIRF: el servicio de proyectos no los publica.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ida_creditos_2026-09-29.json",
+      "institucion": "IDA, estado de creditos",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00001&resourceId=RS00001&type=json&top=20000",
+      "fecha_descarga": "2026-09-30T00:32:20+00:00",
+      "bytes": 15032460,
+      "registros": 11447,
+      "descripcion": "IDA Statement of Credits, Grants and Guarantees, ultima foto disponible, via Finances One. Una fila por credito o donacion. Es la fuente de los desembolsos de la IDA.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "birf-ida_proyectos_2026-09-29.json",
+      "institucion": "BIRF/IDA",
+      "url_origen": "https://search.worldbank.org/api/v3/projects?format=json&rows=1000&fl=id,proj_id,project_name,project_abstract,countryname,countrycode,countryshortname,regionname,boardapprovaldate,closingdate,approvalfy,status,totalamt,curr_total_commitment,curr_ibrd_commitment,idacommamt,grantamt,lendprojectcost,borrower,impagency,mjsector,major_sectors,major_sector_name,sectorcode,esrc_ovrl_risk_rate,envassesmentcategorycode,cons_serv_reqd_ind,teamleadname",
+      "fecha_descarga": "2026-09-30T00:49:14+00:00",
+      "bytes": 52339870,
+      "registros": 28161,
+      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255 (verificado el 21/08/2026).",
+      "version_endpoint": "v3"
+    },
+    {
+      "archivo": "ibrd_prestamos_2026-09-29.json",
+      "institucion": "BIRF, estado de prestamos",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00047&resourceId=RS00005&type=json&top=20000",
+      "fecha_descarga": "2026-09-30T00:49:16+00:00",
+      "bytes": 12770775,
+      "registros": 9518,
+      "descripcion": "IBRD Statement of Loans and Guarantees, ultima foto disponible, via Finances One. Una fila por prestamo, con monto original, desembolsado, no desembolsado y cancelado. Es la fuente de los desembolsos del BIRF: el servicio de proyectos no los publica.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ida_creditos_2026-09-29.json",
+      "institucion": "IDA, estado de creditos",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00001&resourceId=RS00001&type=json&top=20000",
+      "fecha_descarga": "2026-09-30T00:49:18+00:00",
+      "bytes": 15032460,
+      "registros": 11447,
+      "descripcion": "IDA Statement of Credits, Grants and Guarantees, ultima foto disponible, via Finances One. Una fila por credito o donacion. Es la fuente de los desembolsos de la IDA.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ifc_inversiones_2026-09-29.json",
+      "institucion": "IFC",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00499&resourceId=RS00448&type=json&top=20000",
+      "fecha_descarga": "2026-09-30T00:49:19+00:00",
+      "bytes": 9011069,
+      "registros": 7133,
+      "descripcion": "IFC Investment Services Projects, via Finances One. Una fila por documento.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "miga_garantias_2026-09-29.json",
+      "institucion": "MIGA",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00988&resourceId=RS00918&type=json&top=5000",
+      "fecha_descarga": "2026-09-30T00:49:19+00:00",
+      "bytes": 399696,
+      "registros": 715,
+      "descripcion": "MIGA Issued Projects, via Finances One.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ibrd_prestamos_2026-09-29.json",
+      "institucion": "BIRF, estado de prestamos",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00047&resourceId=RS00005&type=json&top=20000",
+      "fecha_descarga": "2026-09-30T00:52:26+00:00",
+      "bytes": 12770775,
+      "registros": 9518,
+      "descripcion": "IBRD Statement of Loans and Guarantees, ultima foto disponible, via Finances One. Una fila por prestamo, con monto original, desembolsado, no desembolsado y cancelado. Es la fuente de los desembolsos del BIRF: el servicio de proyectos no los publica.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ida_creditos_2026-09-29.json",
+      "institucion": "IDA, estado de creditos",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00001&resourceId=RS00001&type=json&top=20000",
+      "fecha_descarga": "2026-09-30T00:52:28+00:00",
+      "bytes": 15032460,
+      "registros": 11447,
+      "descripcion": "IDA Statement of Credits, Grants and Guarantees, ultima foto disponible, via Finances One. Una fila por credito o donacion. Es la fuente de los desembolsos de la IDA.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ifc_inversiones_2026-09-29.json",
+      "institucion": "IFC",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00499&resourceId=RS00448&type=json&top=20000",
+      "fecha_descarga": "2026-09-30T00:52:29+00:00",
+      "bytes": 9011069,
+      "registros": 7133,
+      "descripcion": "IFC Investment Services Projects, via Finances One. Una fila por documento.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "miga_garantias_2026-09-29.json",
+      "institucion": "MIGA",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00988&resourceId=RS00918&type=json&top=5000",
+      "fecha_descarga": "2026-09-30T00:52:30+00:00",
+      "bytes": 399696,
+      "registros": 715,
+      "descripcion": "MIGA Issued Projects, via Finances One.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "birf-ida_proyectos_2026-09-29.json",
+      "institucion": "BIRF/IDA",
+      "url_origen": "https://search.worldbank.org/api/v3/projects?format=json&rows=1000&fl=id,proj_id,project_name,project_abstract,countryname,countrycode,countryshortname,regionname,boardapprovaldate,closingdate,approvalfy,status,totalamt,curr_total_commitment,curr_ibrd_commitment,idacommamt,grantamt,lendprojectcost,borrower,impagency,mjsector,major_sectors,major_sector_name,sectorcode,esrc_ovrl_risk_rate,envassesmentcategorycode,cons_serv_reqd_ind,teamleadname",
+      "fecha_descarga": "2026-09-30T00:55:13+00:00",
+      "bytes": 52339870,
+      "registros": 28161,
+      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255 (verificado el 21/08/2026).",
+      "version_endpoint": "v3"
+    },
+    {
+      "archivo": "ibrd_prestamos_2026-09-29.json",
+      "institucion": "BIRF, estado de prestamos",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00047&resourceId=RS00005&type=json&top=20000",
+      "fecha_descarga": "2026-09-30T00:55:15+00:00",
+      "bytes": 12770775,
+      "registros": 9518,
+      "descripcion": "IBRD Statement of Loans and Guarantees, ultima foto disponible, via Finances One. Una fila por prestamo, con monto original, desembolsado, no desembolsado y cancelado. Es la fuente de los desembolsos del BIRF: el servicio de proyectos no los publica.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ida_creditos_2026-09-29.json",
+      "institucion": "IDA, estado de creditos",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00001&resourceId=RS00001&type=json&top=20000",
+      "fecha_descarga": "2026-09-30T00:55:17+00:00",
+      "bytes": 15032460,
+      "registros": 11447,
+      "descripcion": "IDA Statement of Credits, Grants and Guarantees, ultima foto disponible, via Finances One. Una fila por credito o donacion. Es la fuente de los desembolsos de la IDA.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ifc_inversiones_2026-09-29.json",
+      "institucion": "IFC",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00499&resourceId=RS00448&type=json&top=20000",
+      "fecha_descarga": "2026-09-30T00:55:18+00:00",
+      "bytes": 9011069,
+      "registros": 7133,
+      "descripcion": "IFC Investment Services Projects, via Finances One. Una fila por documento.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "miga_garantias_2026-09-29.json",
+      "institucion": "MIGA",
+      "url_origen": "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice?datasetId=DS00988&resourceId=RS00918&type=json&top=5000",
+      "fecha_descarga": "2026-09-30T00:55:18+00:00",
+      "bytes": 399696,
+      "registros": 715,
+      "descripcion": "MIGA Issued Projects, via Finances One.",
+      "version_endpoint": null
     }
   ]
 }

@@ -27,20 +27,34 @@ dónde y cuándo.
 | CAF, Banco de Desarrollo de América Latina y el Caribe | única |
 | NDB, Nuevo Banco de Desarrollo | única |
 | BAII, Banco Asiático de Inversión en Infraestructura | única |
+| FONPLATA, Fondo Financiero para el Desarrollo de la Cuenca del Plata | única |
+| BCIE, Banco Centroamericano de Integración Económica | única |
 
 ## Uso
 
 Requiere [uv](https://docs.astral.sh/uv/). La versión de Python está fijada en `.python-version`.
 
 ```bash
-uv sync --extra dev                       # instala dependencias
-uv run pytest                             # valida el esquema
-uv run python scripts/descargar_fuentes.py    # descarga todas las fuentes
-uv run python scripts/descargar_fuentes.py caf bid    # solo algunas
+uv sync --extra dev                                   # instala dependencias
+uv run pytest                                         # valida el esquema
+export CONTACTO="tu.correo@institucion.edu"
+uv run python scripts/actualizar_corpus.py            # descarga y arma el corpus de punta a punta
+uv run python scripts/actualizar_corpus.py --sin-descarga   # solo reprocesa lo ya descargado
+uv run python scripts/descargar_fuentes.py caf bid    # descarga solo algunas fuentes
 ```
+
+`actualizar_corpus.py` encadena la descarga, la normalización, la consolidación, los análisis y el
+diccionario de variables. Frena en el primer error y al final muestra qué cambió respecto de la
+corrida anterior, institución por institución.
 
 Cada descarga queda registrada en el manifiesto de su directorio con la dirección de origen, la
 fecha, la versión del punto de acceso y el número de registros obtenidos.
+
+Una advertencia sobre la reproducibilidad: algunas fuentes dejan de publicar operaciones. En
+septiembre de 2026 CAF republicó su archivo IATI sin las operaciones ya terminadas, 225 de 478. El
+normalizador de CAF une todas las descargas fechadas que encuentre en `data/raw/caf/`, así que quien
+descargue por primera vez después de esa fecha obtiene solo las que CAF publica hoy. El manifiesto
+de CAF registra cuántas actividades tenía cada archivo.
 
 ## Documentación
 
@@ -49,6 +63,7 @@ fecha, la versión del punto de acceso y el número de registros obtenidos.
 | [docs/accesos-a-los-datos.md](docs/accesos-a-los-datos.md) | De dónde se obtiene el dato de cada institución, en qué formato y bajo qué licencia |
 | [docs/notas-metodologicas.md](docs/notas-metodologicas.md) | Cómo se construye el corpus y por qué, sin terminología técnica |
 | [docs/analisis-codigo-legacy.md](docs/analisis-codigo-legacy.md) | Qué hacía el código del relevamiento anterior y qué se rescató de él |
+| [docs/diccionario-de-variables.md](docs/diccionario-de-variables.md) | Definición de cada variable del esquema común y su cobertura por institución, generado desde el código |
 
 ## Estructura
 

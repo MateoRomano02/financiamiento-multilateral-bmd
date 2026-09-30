@@ -1,4 +1,10 @@
-"""Descarga las series de tipo de cambio que hacen falta para convertir a dólares.
+"""Descarga de FRED las series de referencia del corpus: tipos de cambio y deflactor.
+
+Son dos usos de la misma fuente. Los tipos de cambio convierten a dólares los montos publicados
+en moneda local, y el deflactor implícito del PBI de Estados Unidos (serie A191RD3A086NBEA)
+expresa la serie en dólares constantes. Hasta el 29 de septiembre de 2026 el deflactor se había
+bajado a mano y ningún programa lo volvía a traer, así que el corpus no era reproducible de punta
+a punta. Ahora se baja acá.
 
 Por qué existe. El NDB publica 44 de sus 146 operaciones con monto en moneda local: rand, yuan,
 rupias, reales y euros. Contarlas como dólares multiplicaba su cartera por cinco. La dirección del
@@ -27,6 +33,7 @@ import httpx
 RAIZ = Path(__file__).resolve().parent.parent
 DESTINO = RAIZ / "data" / "raw" / "referencia"
 FRED = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={serie}"
+SERIE_DEFLACTOR = "A191RD3A086NBEA"
 
 # Cada moneda con la serie de FRED que le corresponde. `invertida` marca las que FRED publica como
 # dólares por unidad de moneda en lugar de unidades de moneda por dólar, que es el caso del euro.
@@ -69,6 +76,13 @@ def main() -> int:
             filas.append([moneda, anio, f"{valor:.6f}", cfg["serie"]])
         ultimo = max(promedios)
         print(f"{moneda} ({cfg['nombre']}): {len(promedios)} años, {ultimo} = {promedios[ultimo]:.4f} por dólar")
+
+    # El deflactor se guarda crudo, tal como lo publica FRED: src/common/deflactor.py lo lee así.
+    respuesta = httpx.get(FRED.format(serie=SERIE_DEFLACTOR), timeout=60, follow_redirects=True)
+    respuesta.raise_for_status()
+    deflactor = DESTINO / f"deflactor_pbi_eeuu_{hoy}.csv"
+    deflactor.write_text(respuesta.text, encoding="utf-8")
+    print(f"Deflactor {SERIE_DEFLACTOR}: {len(respuesta.text.splitlines()) - 1} años, escrito {deflactor.relative_to(RAIZ)}")
 
     salida = DESTINO / f"tipos_de_cambio_{hoy}.csv"
     with salida.open("w", encoding="utf-8", newline="") as f:

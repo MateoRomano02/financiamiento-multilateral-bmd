@@ -1,0 +1,45 @@
+{
+  "descripcion": "Descargas desde las fuentes oficiales. Se regeneran con scripts/descargar_fuentes.py.",
+  "descargas": [
+    {
+      "archivo": "fonplata_actividades_2026-09-29.xml",
+      "institucion": "FONPLATA",
+      "url_origen": "https://fonplata.org/system/files/visualizar/FONPLATA-Activity-File-2026-07.xml",
+      "fecha_descarga": "2026-09-30T00:26:58+00:00",
+      "bytes": 910781,
+      "registros": 127,
+      "descripcion": "Archivo de actividades IATI de FONPLATA. 127 operaciones en la version de julio de 2026, todas en dolares.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "fonplata_actividades_2026-09-29.xml",
+      "institucion": "FONPLATA",
+      "url_origen": "https://fonplata.org/system/files/visualizar/FONPLATA-Activity-File-2026-07.xml",
+      "fecha_descarga": "2026-09-30T00:49:24+00:00",
+      "bytes": 910781,
+      "registros": 127,
+      "descripcion": "Archivo de actividades IATI de FONPLATA. 127 operaciones en la version de julio de 2026, todas en dolares.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "fonplata_actividades_2026-09-29.xml",
+      "institucion": "FONPLATA",
+      "url_origen": "https://fonplata.org/system/files/visualizar/FONPLATA-Activity-File-2026-07.xml",
+      "fecha_descarga": "2026-09-30T00:52:41+00:00",
+      "bytes": 910781,
+      "registros": 127,
+      "descripcion": "Archivo de actividades IATI de FONPLATA. 127 operaciones en la version de julio de 2026, todas en dolares.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "fonplata_actividades_2026-09-29.xml",
+      "institucion": "FONPLATA",
+      "url_origen": "https://fonplata.org/system/files/visualizar/FONPLATA-Activity-File-2026-07.xml",
+      "fecha_descarga": "2026-09-30T00:55:26+00:00",
+      "bytes": 910781,
+      "registros": 127,
+      "descripcion": "Archivo de actividades IATI de FONPLATA. 127 operaciones en la version de julio de 2026, todas en dolares.",
+      "version_endpoint": null
+    }
+  ]
+}

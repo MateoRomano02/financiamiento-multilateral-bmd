@@ -81,11 +81,28 @@ def validar_montos(df: pd.DataFrame) -> list[str]:
             errores.append(f"{col}: {int((df[col] < 0).sum())} filas con monto negativo")
 
     if {"monto_aprobado_usd", "monto_desembolsado_usd"}.issubset(df.columns):
-        excede = df["monto_desembolsado_usd"] > df["monto_aprobado_usd"]
-        if excede.any():
+        aprobado = pd.to_numeric(df["monto_aprobado_usd"], errors="coerce")
+        desembolsado = pd.to_numeric(df["monto_desembolsado_usd"], errors="coerce")
+        # Donde el aprobado es cero la razon no existe; un desembolso ahi cuenta como sobredesembolso.
+        razon = (desembolsado / aprobado.where(aprobado > 0)).fillna(0)
+        # Un error de unidad deja una huella inconfundible: el desembolsado da mil o un millon de
+        # veces el aprobado. Eso es una falla del pipeline y frena la consolidacion.
+        unidad = razon >= 10
+        if unidad.any():
             errores.append(
-                f"monto_desembolsado_usd supera al aprobado en {int(excede.sum())} filas "
-                "(revisar unidades: millones vs unidades)"
+                f"monto_desembolsado_usd supera diez veces o mas al aprobado en {int(unidad.sum())} "
+                "filas (revisar unidades: millones vs unidades)"
+            )
+        # Un sobredesembolso menor es un dato de la fuente, no del pipeline: el prestamo se amplio
+        # sin registrar un compromiso nuevo, o se publica solo el compromiso original. Tres
+        # operaciones del BCIE, verificado el 29/09/2026. Se informa, no se corrige ni se recorta.
+        # La tolerancia de un dolar absorbe el redondeo de sumar cuotas con decimales.
+        menor = (desembolsado > aprobado.fillna(0) + 1) & (razon < 10)
+        if menor.any():
+            instituciones = ", ".join(sorted(df.loc[menor, "institucion"].dropna().unique()))
+            errores.append(
+                f"sobredesembolso: {int(menor.sum())} filas con desembolsado mayor al aprobado, "
+                f"dato de la fuente ({instituciones})"
             )
     return errores
 

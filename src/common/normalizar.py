@@ -31,6 +31,7 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from functools import lru_cache, partial
 from pathlib import Path
 
 import pandas as pd
@@ -86,22 +87,33 @@ def a_numero(valor: object, factor: float = 1.0) -> float | None:
         return None
 
 
-# CAF publica el receptor como codigo ISO de dos letras, mientras el resto del corpus usa el
-# nombre del pais. Sin traducir, CAF queda fuera de cualquier agregacion por pais. Son los 18
-# codigos que aparecen en su archivo; uno nuevo se veria como codigo crudo y hay que sumarlo aca.
+# Los bancos que publican en IATI (CAF, FONPLATA, BCIE) dan el receptor como codigo ISO de dos
+# letras, mientras el resto del corpus usa el nombre del pais. Sin traducir, quedan fuera de toda
+# agregacion por pais. Son los codigos que aparecen en sus archivos; uno nuevo se veria como
+# codigo crudo en el corpus y hay que sumarlo aca.
 PAISES_ISO2 = {
-    "AR": "Argentina", "BB": "Barbados", "BO": "Bolivia", "BR": "Brazil", "CL": "Chile",
-    "CO": "Colombia", "CR": "Costa Rica", "DO": "Dominican Republic", "EC": "Ecuador",
-    "ES": "Spain", "MX": "Mexico", "PA": "Panama", "PE": "Peru", "PY": "Paraguay",
-    "SV": "El Salvador", "TT": "Trinidad and Tobago", "UY": "Uruguay", "VE": "Venezuela",
+    "AR": "Argentina", "BB": "Barbados", "BO": "Bolivia", "BR": "Brazil", "BZ": "Belize",
+    "CL": "Chile", "CO": "Colombia", "CR": "Costa Rica", "CU": "Cuba", "DO": "Dominican Republic",
+    "EC": "Ecuador", "ES": "Spain", "GT": "Guatemala", "HN": "Honduras", "MX": "Mexico",
+    "NI": "Nicaragua", "PA": "Panama", "PE": "Peru", "PY": "Paraguay", "SV": "El Salvador",
+    "TT": "Trinidad and Tobago", "UY": "Uruguay", "VE": "Venezuela",
 }
+
+# Codigos no estandar que publica algun banco, llevados al ISO. El BCIE escribe RD para Republica
+# Dominicana en lugar de DO, en 9 actividades (verificado el 29/09/2026). Sin esto quedaba un pais
+# llamado literalmente "RD" en el corpus, sin ningun error que lo avisara.
+ALIAS_PAIS = {"RD": "DO"}
 
 
 def nombre_de_pais(codigo: object) -> str | None:
-    """Traduce el codigo ISO2 de CAF al nombre que usa el resto del corpus."""
+    """Traduce el codigo ISO2 de las fuentes IATI al nombre que usa el resto del corpus."""
     if codigo is None:
         return None
-    partes = [PAISES_ISO2.get(c.strip(), c.strip()) for c in str(codigo).split(";") if c.strip()]
+    partes = []
+    for c in str(codigo).split(";"):
+        c = ALIAS_PAIS.get(c.strip(), c.strip())
+        if c:
+            partes.append(PAISES_ISO2.get(c, c))
     return ";".join(partes) or None
 
 
@@ -165,8 +177,8 @@ ESTADOS_POR_FUENTE: dict[str, dict[str, str]] = {
         "Inactive": "desconocido",
         "Hold": "desconocido",
     },
-    # Códigos del estándar IATI: 2 es implementación, 4 es cerrado.
-    "caf": {"1": "propuesto", "2": "en_implementacion", "3": "en_implementacion", "4": "cerrado",
+    # Codigos del estandar IATI, comunes a CAF, FONPLATA y BCIE: 2 es implementacion, 4 cerrado.
+    "iati": {"1": "propuesto", "2": "en_implementacion", "3": "en_implementacion", "4": "cerrado",
             "5": "cancelado", "6": "desconocido"},
     "aiib": {
         "Approved": "aprobado",
@@ -211,6 +223,69 @@ def _cerrar(filas: list[dict]) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 
+# Tolerancias de la union entre los proyectos del Banco Mundial y su estado de prestamos. Se
+# midieron sobre las 3.500 operaciones del periodo que cruzan (29/09/2026): la fecha absorbe
+# diferencias de registro entre sistemas, y el margen de monto absorbe el tipo de cambio de los
+# creditos de la IDA pactados en Derechos Especiales de Giro o en euros, sin aceptar los siete
+# casos en que los dos sistemas difieren entre dos y diecisiete veces sobre el monto.
+DIAS_TOLERANCIA_PRESTAMO = 60
+MONTO_TOLERANCIA_PRESTAMO = 0.20
+
+
+@lru_cache(maxsize=1)
+def prestamos_banco_mundial() -> pd.DataFrame:
+    """Una fila por prestamo del BIRF y por credito o donacion de la IDA, de la ultima foto."""
+    fuentes = {
+        "BIRF": ("ibrd_prestamos_*.json", {"original_principal_amount": "original",
+                                           "disbursed_amount": "desembolsado"}),
+        "IDA": ("ida_creditos_*.json", {"original_principal_amount_us_": "original",
+                                        "disbursed_amount_us_": "desembolsado"}),
+    }
+    partes = []
+    for ventanilla, (patron, renombre) in fuentes.items():
+        archivos = sorted((CRUDO / "gbm").glob(patron))
+        if not archivos:
+            continue
+        d = pd.DataFrame(json.loads(archivos[-1].read_text(encoding="utf-8"))["data"]).rename(columns=renombre)
+        d["ventanilla"] = ventanilla
+        d["fecha_prestamo"] = pd.to_datetime(d["board_approval_date"], format="%d-%b-%Y", errors="coerce")
+        for col in ("original", "desembolsado"):
+            d[col] = pd.to_numeric(d[col], errors="coerce")
+        partes.append(d[["project_id", "ventanilla", "fecha_prestamo", "original", "desembolsado"]])
+    if not partes:
+        return pd.DataFrame(columns=["project_id", "ventanilla", "fecha_prestamo", "original", "desembolsado"])
+    return pd.concat(partes, ignore_index=True)
+
+
+def _desembolsos_banco_mundial(df: pd.DataFrame) -> pd.DataFrame:
+    """Asigna a cada operacion del BIRF y de la IDA lo desembolsado de sus prestamos.
+
+    El servicio de proyectos no publica desembolsos; el estado de prestamos de Finances One si,
+    pero por prestamo y no por operacion. La union no puede ser solo por proyecto: los
+    financiamientos adicionales se aprueban como proyecto nuevo pero su prestamo queda registrado
+    bajo el proyecto original, y sumar por proyecto le atribuia al original la plata de sus
+    ampliaciones (463 operaciones desembolsando mas de lo aprobado). Por eso cada prestamo se
+    asigna a la operacion del mismo proyecto y ventanilla aprobada en la misma fecha, y solo si el
+    monto del prestamo coincide con el aprobado. Si no coincide, la operacion queda sin
+    desembolso: es preferible un hueco visible a una cifra atribuida al proyecto equivocado.
+    """
+    prestamos = prestamos_banco_mundial()
+    if prestamos.empty:
+        return df
+    base = df[["institucion", "id_proyecto", "fecha_aprobacion", "monto_aprobado_usd"]].reset_index()
+    base["fecha"] = pd.to_datetime(base["fecha_aprobacion"], errors="coerce")
+    unidos = base.merge(prestamos, left_on=["id_proyecto", "institucion"],
+                        right_on=["project_id", "ventanilla"])
+    unidos = unidos[(unidos["fecha_prestamo"] - unidos["fecha"]).dt.days.abs() <= DIAS_TOLERANCIA_PRESTAMO]
+    por_operacion = unidos.groupby("index").agg(original=("original", "sum"),
+                                                desembolsado=("desembolsado", "sum"))
+    aprobado = base.set_index("index").loc[por_operacion.index, "monto_aprobado_usd"]
+    coincide = (por_operacion["original"] / aprobado - 1).abs() <= MONTO_TOLERANCIA_PRESTAMO
+    df["monto_desembolsado_usd"] = df["monto_desembolsado_usd"].astype("float64")
+    df.loc[por_operacion.index[coincide], "monto_desembolsado_usd"] = por_operacion.loc[coincide, "desembolsado"]
+    return df
+
+
 def normalizar_gbm(ruta: Path, relevamiento: str) -> pd.DataFrame:
     """BIRF e IDA, que comparten descarga y se separan por el compromiso de cada ventanilla.
 
@@ -244,7 +319,7 @@ def normalizar_gbm(ruta: Path, relevamiento: str) -> pd.DataFrame:
                 {**_fila_base(institucion, "GBM", url, relevamiento), **comunes,
                  "id_proyecto": f"{r.get('id')}", "monto_aprobado_usd": monto}
             )
-    return _cerrar(filas)
+    return _desembolsos_banco_mundial(_cerrar(filas))
 
 
 def normalizar_ifc(ruta: Path, relevamiento: str) -> pd.DataFrame:
@@ -376,17 +451,80 @@ def normalizar_bid_invest(ruta: Path, relevamiento: str) -> pd.DataFrame:
     return _cerrar(filas)
 
 
-def normalizar_caf(ruta: Path, relevamiento: str) -> pd.DataFrame:
-    """CAF, publicada en el estándar IATI.
+@lru_cache(maxsize=1)
+def sectores_cad() -> dict[str, str]:
+    """Nombre de cada codigo de sector del CAD de la OCDE, desde la lista oficial del estandar IATI."""
+    archivos = sorted((CRUDO / "referencia").glob("iati_sector_*.json"))
+    if not archivos:
+        return {}
+    datos = json.loads(archivos[-1].read_text(encoding="utf-8"))
+    return {x["code"]: x["name"] for x in datos.get("data", datos)}
 
-    Es la única fuente del corpus con monto desembolsado explícito: la transacción de tipo 3.
-    La de tipo 2 es el compromiso. Sus sectores usan un vocabulario propio, pero cada uno trae
-    su nombre en texto, así que no hace falta una tabla de traducción.
+
+def _sector_iati(act: ET.Element) -> str | None:
+    """El sector con nombre legible si el banco lo publica, y si no el codigo CAD traducido.
+
+    Antes se tomaba el primer <sector> del documento. En CAF funcionaba porque es el unico y trae
+    nombre; en FONPLATA el primero es siempre un codigo sin nombre y en el BCIE no hay ninguno con
+    nombre, asi que las dos quedaban con el sector vacio en el 100% de las operaciones.
+    """
+    sectores = act.findall("sector")
+    for s in sectores:
+        if s.get("vocabulary") in ("98", "99"):  # vocabulario propio del banco, con narrativa
+            texto = "".join(s.itertext()).strip()
+            if texto:
+                return texto
+    cad = [(float(s.get("percentage") or 0), s.get("code") or "")
+           for s in sectores if s.get("vocabulary") in (None, "1")]
+    if not cad:
+        return None
+    codigo = max(cad)[1]  # el de mayor porcentaje, cuando la operacion reparte entre varios
+    return sectores_cad().get(codigo, codigo)
+
+
+# Fechas de relleno: el archivo de CAF del 9/09/2026 trae compromisos fechados 1900-01-01 (dos
+# prestamos de 2025 por USD 850 millones) y un inicio 1970-01-01, que es el cero de los relojes de
+# computadora. No son fechas, son campos vacios con otro disfraz.
+FECHAS_DE_RELLENO = {"1900-01-01", "1970-01-01"}
+
+
+def _fecha_de_compromiso(act: ET.Element) -> str | None:
+    """La fecha de la transaccion de compromiso, que es la aprobacion.
+
+    Antes se tomaba el primer activity-date del documento. En CAF y FONPLATA coincidia por el orden
+    de los campos; en el BCIE el primero es el de tipo 1, que resulta ser el compromiso mas 365 dias
+    exactos, y corria un anio las 119 operaciones con compromiso (verificado el 29/09/2026). Si hay
+    varios compromisos, manda el primero.
+    """
+    fechas = []
+    for tx in act.findall("transaction"):
+        tipo = tx.find("transaction-type")
+        fecha = tx.find("transaction-date")
+        if tipo is not None and tipo.get("code") == "2" and fecha is not None and fecha.get("iso-date"):
+            fechas.append(fecha.get("iso-date"))
+    fechas = [f for f in fechas if f[:10] not in FECHAS_DE_RELLENO]
+    if fechas:
+        return min(fechas)
+    # Sin transaccion de compromiso: el inicio efectivo, nunca el tipo 1 por lo dicho arriba.
+    return next((d.get("iso-date") for d in act.findall("activity-date")
+                 if d.get("type") == "2" and (d.get("iso-date") or "")[:10] not in FECHAS_DE_RELLENO), None)
+
+
+def normalizar_iati(ruta: Path, relevamiento: str, institucion: str) -> pd.DataFrame:
+    """Los bancos que publican en el estandar IATI: CAF, FONPLATA y BCIE.
+
+    Un solo normalizador para los tres, porque el estandar es el mismo. La transaccion de tipo 2 es
+    el compromiso y la de tipo 3 el desembolso, y son las unicas tres fuentes del corpus que
+    publican desembolsos por operacion. Las transacciones del mismo tipo se suman: el estandar
+    admite desembolsos en cuotas.
     """
     raiz = ET.parse(ruta).getroot()
-    url = "https://d-portal.org/ctrack.html?reporting_ref=XM-DAC-46008"
+    reporta = raiz.find("iati-activity/reporting-org")
+    ref = reporta.get("ref") if reporta is not None else ""
+    url = f"https://d-portal.org/ctrack.html?reporting_ref={ref}"
     filas = []
     for act in raiz:
+        moneda = act.get("default-currency")
         transacciones: dict[str, float] = {}
         for tx in act.findall("transaction"):
             nodo = tx.find("transaction-type")
@@ -394,25 +532,32 @@ def normalizar_caf(ruta: Path, relevamiento: str) -> pd.DataFrame:
             if nodo is not None and valor is not None:
                 monto = a_numero(valor.text)
                 if monto is not None:
-                    transacciones[nodo.get("code", "")] = monto
-        sector = act.find("sector")
+                    codigo_tx = nodo.get("code", "")
+                    transacciones[codigo_tx] = transacciones.get(codigo_tx, 0.0) + monto
         titulo = act.find("title")
         estado = act.find("activity-status")
-        fecha = next((d.get("iso-date") for d in act.findall("activity-date")), None)
         paises = [p.get("code", "") for p in act.findall("recipient-country")]
+        # Una operacion multipais sin pais unico se marca como regional, igual que en el resto del
+        # corpus, en lugar de quedar vacia.
+        pais = nombre_de_pais(";".join(filter(None, paises))) or (
+            "Regional" if act.find("recipient-region") is not None else None)
+        fecha = a_fecha(_fecha_de_compromiso(act))
+        anio = int(fecha[:4]) if fecha else None
         codigo = estado.get("code") if estado is not None else None
         filas.append(
-            {**_fila_base("CAF", "CAF", url, relevamiento),
+            {**_fila_base(institucion, institucion, url, relevamiento),
              "id_proyecto": (act.findtext("iati-identifier") or "").strip(),
              "nombre": "".join(titulo.itertext()).strip() if titulo is not None else None,
-             "pais": nombre_de_pais(";".join(filter(None, paises))),
-             "fecha_aprobacion": a_fecha(fecha),
-             "estado": mapear_estado("caf", codigo),
+             "pais": pais,
+             "url_proyecto": next((d.get("url") for d in act.findall("document-link") if d.get("url")), None),
+             "fecha_aprobacion": fecha,
+             "estado": mapear_estado("iati", codigo),
              "estado_original": codigo,
-             "monto_aprobado_usd": transacciones.get("2"),
-             "monto_desembolsado_usd": transacciones.get("3"),
-             "moneda_original": act.get("default-currency"),
-             "sector": "".join(sector.itertext()).strip() if sector is not None else None}
+             "monto_aprobado_usd": a_dolares(transacciones.get("2"), moneda, anio),
+             "monto_desembolsado_usd": a_dolares(transacciones.get("3"), moneda, anio),
+             "moneda_original": normalizar_moneda(moneda),
+             "monto_original": transacciones.get("2"),
+             "sector": _sector_iati(act)}
         )
     return _cerrar(filas)
 
@@ -541,7 +686,9 @@ NORMALIZADORES = {
     "miga": ("gbm/miga_garantias_*.json", normalizar_miga),
     "bid": ("gbid/bid_proyectos_*.csv", normalizar_bid),
     "bid_invest": ("gbid/bid-invest_proyectos_*.xml", normalizar_bid_invest),
-    "caf": ("caf/caf_actividades_*.xml", normalizar_caf),
+    "caf": ("caf/caf_actividades_*.xml", partial(normalizar_iati, institucion="CAF")),
+    "fonplata": ("fonplata/fonplata_actividades_*.xml", partial(normalizar_iati, institucion="FONPLATA")),
+    "bcie": ("bcie/bcie_actividades_*.xml", partial(normalizar_iati, institucion="BCIE")),
     "aiib": ("aiib/aiib_proyectos_*.js", normalizar_aiib),
     "ndb": ("ndb/ndb_proyectos_*.html", normalizar_ndb),
 }
@@ -555,12 +702,44 @@ def ultima_descarga(patron: str) -> Path:
     return candidatos[-1]
 
 
+# Fuentes que sacan operaciones de su archivo cuando terminan. El 9/09/2026 CAF republico su
+# archivo IATI con 286 actividades en lugar de 478: saco 225, y 217 de ellas estaban en estado
+# posterior a la finalizacion. Usar solo la ultima foto le quitaba al corpus la mitad de CAF
+# 2014-2025. Para estas fuentes se unen todas las fotos descargadas (ver acumular_fotos).
+ACUMULAN_FOTOS = {"caf"}
+
+
+def _fecha_del_nombre(ruta: Path) -> str:
+    # La fecha del relevamiento sale del nombre del archivo, que es el que fija el manifiesto.
+    marca = re.search(r"(\d{4}-\d{2}-\d{2})", ruta.name)
+    return marca.group(1) if marca else ""
+
+
+def acumular_fotos(fotos: list[pd.DataFrame]) -> pd.DataFrame:
+    """Une varias fotos de una misma fuente, de la mas vieja a la mas nueva.
+
+    De cada operacion queda la version de la foto mas nueva que la trae. Una operacion que solo
+    esta en una foto vieja se conserva, con la fecha de relevamiento de esa foto. Hay una
+    excepcion: si la foto nueva trae una operacion con el mismo nombre y el mismo anio bajo otro
+    identificador, la vieja se descarta, porque es la misma operacion republicada. Pasa en CAF con
+    un prestamo de Colombia de 2020 por USD 350 millones.
+    """
+    union = pd.concat(fotos, ignore_index=True)
+    union = union.drop_duplicates("id_proyecto", keep="last")
+    clave = union["nombre"].fillna("").str.lower().str.strip() + "|" + union["anio_aprobacion"].astype(str)
+    mas_nueva = union.groupby(clave)["fecha_relevamiento"].transform("max")
+    republicada = (union["fecha_relevamiento"] < mas_nueva) & (clave.str.len() > 5)
+    return union[~republicada].reset_index(drop=True)
+
+
 def normalizar_todo() -> pd.DataFrame:
-    """Normaliza las ocho fuentes y devuelve el corpus consolidado."""
+    """Normaliza todas las fuentes y devuelve el corpus consolidado."""
     partes = []
     for clave, (patron, funcion) in NORMALIZADORES.items():
+        if clave in ACUMULAN_FOTOS:
+            fotos = [funcion(r, _fecha_del_nombre(r)) for r in sorted(CRUDO.glob(patron))]
+            partes.append(acumular_fotos(fotos))
+            continue
         ruta = ultima_descarga(patron)
-        # La fecha del relevamiento sale del nombre del archivo, que es el que fija el manifiesto.
-        marca = re.search(r"(\d{4}-\d{2}-\d{2})", ruta.name)
-        partes.append(funcion(ruta, marca.group(1) if marca else ""))
+        partes.append(funcion(ruta, _fecha_del_nombre(ruta)))
     return pd.concat(partes, ignore_index=True)

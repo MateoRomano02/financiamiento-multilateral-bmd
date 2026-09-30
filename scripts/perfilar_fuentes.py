@@ -1,6 +1,7 @@
 """Perfila las fuentes descargadas y produce el resumen de variables por institución.
 
-Este programa contesta la pregunta que ordena la construcción del corpus: qué variables publica realmente cada institución, con qué nivel de completitud, y cuáles
+Este programa contesta la pregunta que la dirección del proyecto viene pidiendo desde el 25 de
+agosto: qué variables publica realmente cada institución, con qué nivel de completitud, y cuáles
 de ellas alimentan cada columna del esquema común.
 
 No consulta las fuentes en vivo. Lee las descargas fechadas que están en `data/raw/`, de modo que
@@ -195,7 +196,7 @@ FUENTES: tuple[Fuente, ...] = (
             "instrumento": "product_line",
             "sector": "industry",
         },
-        nota="Requiere deduplicar a nivel proyecto antes de poder agregarse: "
+        nota="Requiere deduplicar a nivel proyecto antes de poder agregarse: es el hallazgo H2, "
         "el portal publica una fila por documento. **Sus montos están en millones**, no en "
         "unidades, y vienen además desagregados por instrumento (préstamo, capital, garantía, "
         "gestión de riesgo), lo que permite separar la cartera sin recurrir a otra fuente.",
@@ -237,7 +238,7 @@ FUENTES: tuple[Fuente, ...] = (
             "instrumento": "lending_instrmnt_nm",
             "sector": "sector_nm",
         },
-        nota="BID Lab sale de este mismo archivo por código de instrumento MIF, la identificación por código de instrumento. "
+        nota="BID Lab sale de este mismo archivo por código de instrumento MIF, hallazgo H3. "
         "Trae además subsector, modalidad y clasificación ambiental.",
     ),
     Fuente(
@@ -281,7 +282,7 @@ FUENTES: tuple[Fuente, ...] = (
             "moneda_original": "default-currency",
             "sector": "sector",
         },
-        nota="Fuente incompleta: cubre entre el 13% y el 48% del volumen que la "
+        nota="Fuente incompleta, hallazgo H9: cubre entre el 13% y el 48% del volumen que la "
         "propia CAF reporta en sus informes anuales. Se usa junto con la base heredada, no en "
         "lugar de ella. **Es la única fuente del corpus con monto desembolsado explícito**, en la "
         "transacción IATI de tipo 3, presente en el 98% de las actividades. Sus sectores vienen "

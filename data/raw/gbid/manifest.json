@@ -18,6 +18,56 @@
       "bytes": 16427873,
       "registros": 27329,
       "descripcion": "Catalogo de datos abiertos del BID (CKAN), DOI 10.60966/ihisavwe, CC-BY 4.0. Incluye BID Lab, filtrable por lending_instrmnt_cd == 'MIF'."
+    },
+    {
+      "archivo": "bid-invest_proyectos_2026-09-29.xml",
+      "institucion": "BID Invest",
+      "url_origen": "https://idbinvest.org/en/projects.xml",
+      "fecha_descarga": "2026-09-30T00:49:20+00:00",
+      "bytes": 10004252,
+      "registros": 4797,
+      "descripcion": "Descarga completa de la cartera de BID Invest.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "bid_proyectos_2026-09-29.csv",
+      "institucion": "BID",
+      "url_origen": "https://data.iadb.org/files/download/791d475c-0f61-411c-ae92-2242c913e73a",
+      "fecha_descarga": "2026-09-30T00:52:36+00:00",
+      "bytes": 16427873,
+      "registros": 27329,
+      "descripcion": "Catalogo de datos abiertos del BID (CKAN), DOI 10.60966/ihisavwe, CC-BY 4.0. Incluye BID Lab, filtrable por lending_instrmnt_cd == 'MIF'.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "bid-invest_proyectos_2026-09-29.xml",
+      "institucion": "BID Invest",
+      "url_origen": "https://idbinvest.org/en/projects.xml",
+      "fecha_descarga": "2026-09-30T00:52:36+00:00",
+      "bytes": 10004252,
+      "registros": 4797,
+      "descripcion": "Descarga completa de la cartera de BID Invest.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "bid_proyectos_2026-09-29.csv",
+      "institucion": "BID",
+      "url_origen": "https://data.iadb.org/files/download/791d475c-0f61-411c-ae92-2242c913e73a",
+      "fecha_descarga": "2026-09-30T00:55:22+00:00",
+      "bytes": 16427873,
+      "registros": 27329,
+      "descripcion": "Catalogo de datos abiertos del BID (CKAN), DOI 10.60966/ihisavwe, CC-BY 4.0. Incluye BID Lab, filtrable por lending_instrmnt_cd == 'MIF'.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "bid-invest_proyectos_2026-09-29.xml",
+      "institucion": "BID Invest",
+      "url_origen": "https://idbinvest.org/en/projects.xml",
+      "fecha_descarga": "2026-09-30T00:55:22+00:00",
+      "bytes": 10004252,
+      "registros": 4797,
+      "descripcion": "Descarga completa de la cartera de BID Invest.",
+      "version_endpoint": null
     }
   ]
 }

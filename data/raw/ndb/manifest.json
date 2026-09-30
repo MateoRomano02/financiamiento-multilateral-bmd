@@ -19,6 +19,86 @@
       "registros": 170,
       "descripcion": "Listado de proyectos del NDB en HTML estatico.",
       "version_endpoint": null
+    },
+    {
+      "archivo": "ndb_montos_2026-09-17.json",
+      "institucion": "NDB",
+      "url_origen": "https://www.ndb.int/project/<proyecto>/",
+      "fecha_descarga": "2026-09-18T01:01:20+00:00",
+      "bytes": 17349,
+      "registros": 22,
+      "descripcion": "Monto por proyecto, leido de la ficha individual. El listado no lo publica.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ndb_montos_2026-09-17.json",
+      "institucion": "NDB",
+      "url_origen": "https://www.ndb.int/project/<proyecto>/",
+      "fecha_descarga": "2026-09-18T01:03:56+00:00",
+      "bytes": 29807,
+      "registros": 160,
+      "descripcion": "Monto por proyecto, leido de la ficha individual. El listado no lo publica.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ndb_montos_2026-09-23.json",
+      "institucion": "NDB",
+      "url_origen": "https://www.ndb.int/project/<proyecto>/",
+      "fecha_descarga": "2026-09-23T13:29:12+00:00",
+      "bytes": 29807,
+      "registros": 160,
+      "descripcion": "Monto por proyecto, leido de la ficha individual. El listado no lo publica.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ndb_montos_2026-09-23.json",
+      "institucion": "NDB",
+      "url_origen": "https://www.ndb.int/project/<proyecto>/",
+      "fecha_descarga": "2026-09-23T13:35:13+00:00",
+      "bytes": 31165,
+      "registros": 160,
+      "descripcion": "Monto por proyecto, leido de la ficha individual. El listado no lo publica.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ndb_proyectos_2026-09-29.html",
+      "institucion": "NDB",
+      "url_origen": "https://www.ndb.int/projects/all-projects/",
+      "fecha_descarga": "2026-09-30T00:50:26+00:00",
+      "bytes": 2406261,
+      "registros": 171,
+      "descripcion": "Listado de proyectos del NDB en HTML estatico.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ndb_proyectos_2026-09-29.html",
+      "institucion": "NDB",
+      "url_origen": "https://www.ndb.int/projects/all-projects/",
+      "fecha_descarga": "2026-09-30T00:53:43+00:00",
+      "bytes": 2406261,
+      "registros": 171,
+      "descripcion": "Listado de proyectos del NDB en HTML estatico.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ndb_proyectos_2026-09-29.html",
+      "institucion": "NDB",
+      "url_origen": "https://www.ndb.int/projects/all-projects/",
+      "fecha_descarga": "2026-09-30T00:56:25+00:00",
+      "bytes": 2406261,
+      "registros": 171,
+      "descripcion": "Listado de proyectos del NDB en HTML estatico.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "ndb_montos_2026-09-29.json",
+      "institucion": "NDB",
+      "url_origen": "https://www.ndb.int/project/<proyecto>/",
+      "fecha_descarga": "2026-09-30T00:58:21+00:00",
+      "bytes": 31354,
+      "registros": 161,
+      "descripcion": "Monto por proyecto, leido de la ficha individual. El listado no lo publica.",
+      "version_endpoint": null
     }
   ]
 }

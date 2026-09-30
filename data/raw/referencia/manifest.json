@@ -1,0 +1,52 @@
+{
+  "descripcion": "Series de referencia externas.",
+  "descargas": [
+    {
+      "archivo": "deflactor_pbi_eeuu_2026-09-17.csv",
+      "institucion": "Bureau of Economic Analysis via FRED",
+      "url_origen": "https://fred.stlouisfed.org/series/A191RD3A086NBEA",
+      "descripcion": "Deflactor implicito del PBI de EEUU, base 2017=100. Lo indico la direccion del proyecto el 17/09/2026 para pasar la serie a dolares constantes con base 2025.",
+      "registros": 97
+    },
+    {
+      "archivo": "iati_sector_2026-09-29.json",
+      "institucion": "IATI, lista de codigos de sector",
+      "url_origen": "https://iatistandard.org/reference_downloads/203/codelists/downloads/clv3/json/en/Sector.json",
+      "fecha_descarga": "2026-09-30T00:27:04+00:00",
+      "bytes": 111677,
+      "registros": 333,
+      "descripcion": "Lista oficial de codigos de sector del CAD de la OCDE, 333 codigos. El BCIE publica el sector solo como codigo, sin nombre, y esta lista es la que lo traduce.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "iati_sector_2026-09-29.json",
+      "institucion": "IATI, lista de codigos de sector",
+      "url_origen": "https://iatistandard.org/reference_downloads/203/codelists/downloads/clv3/json/en/Sector.json",
+      "fecha_descarga": "2026-09-30T00:49:29+00:00",
+      "bytes": 111677,
+      "registros": 333,
+      "descripcion": "Lista oficial de codigos de sector del CAD de la OCDE, 333 codigos. El BCIE publica el sector solo como codigo, sin nombre, y esta lista es la que lo traduce.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "iati_sector_2026-09-29.json",
+      "institucion": "IATI, lista de codigos de sector",
+      "url_origen": "https://iatistandard.org/reference_downloads/203/codelists/downloads/clv3/json/en/Sector.json",
+      "fecha_descarga": "2026-09-30T00:52:46+00:00",
+      "bytes": 111677,
+      "registros": 333,
+      "descripcion": "Lista oficial de codigos de sector del CAD de la OCDE, 333 codigos. El BCIE publica el sector solo como codigo, sin nombre, y esta lista es la que lo traduce.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "iati_sector_2026-09-29.json",
+      "institucion": "IATI, lista de codigos de sector",
+      "url_origen": "https://iatistandard.org/reference_downloads/203/codelists/downloads/clv3/json/en/Sector.json",
+      "fecha_descarga": "2026-09-30T00:55:31+00:00",
+      "bytes": 111677,
+      "registros": 333,
+      "descripcion": "Lista oficial de codigos de sector del CAD de la OCDE, 333 codigos. El BCIE publica el sector solo como codigo, sin nombre, y esta lista es la que lo traduce.",
+      "version_endpoint": null
+    }
+  ]
+}

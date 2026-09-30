@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -69,25 +70,58 @@ FUENTES: tuple[Fuente, ...] = (
             # Identificacion y ubicacion
             "id,proj_id,project_name,project_abstract,countryname,countrycode,"
             "countryshortname,regionname,"
-            # Fechas y estado
-            "boardapprovaldate,closingdate,approvalfy,status,projectstatusdisplay,"
-            # Montos
-            "totalamt,totalcommamt,curr_total_commitment,ibrdcommamt,idacommamt,"
+            # Fechas y estado. projectstatusdisplay vuelve vacio siempre: el estado real
+            # esta en `status` (Closed / Dropped / Active / Pipeline).
+            "boardapprovaldate,closingdate,approvalfy,status,"
+            # Montos. curr_ibrd_commitment es el campo que separa la ventanilla BIRF de
+            # la de IDA; el nombre `ibrdcommamt` que figura en documentacion no existe en
+            # el servicio y volvia vacio en silencio (verificado el 15/09/2026).
+            "totalamt,curr_total_commitment,curr_ibrd_commitment,idacommamt,"
             "grantamt,lendprojectcost,"
             # Quien recibe y quien ejecuta: el equipo los necesita y no los teniamos
             "borrower,impagency,"
-            # Clasificacion sectorial y de instrumento
-            "mjsector,major_sectors,sector1,theme1,lendinginstr,prodline,"
+            # Clasificacion sectorial. El servicio NO expone instrumento de prestamo:
+            # lendinginstr, prodline, sector1 y theme1 no existen en v3.
+            "mjsector,major_sectors,major_sector_name,sectorcode,"
             # Salvaguardas: esrc_ovrl_risk_rate es la calificacion de riesgo ambiental
             # y social, directamente pertinente al eje de normativa del proyecto
             "esrc_ovrl_risk_rate,envassesmentcategorycode,cons_serv_reqd_ind,"
-            "teamleadname,url,source"
+            "teamleadname"
         ),
         extension="json",
         descripcion=(
             "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 "
             "porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, "
             "y 381 de Argentina contra 255 (verificado el 21/08/2026)."
+        ),
+    ),
+    Fuente(
+        clave="ibrd_prestamos",
+        institucion="BIRF, estado de prestamos",
+        carpeta="gbm",
+        url=(
+            "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice"
+            "?datasetId=DS00047&resourceId=RS00005&type=json&top=20000"
+        ),
+        extension="json",
+        descripcion=(
+            "IBRD Statement of Loans and Guarantees, ultima foto disponible, via Finances One. Una "
+            "fila por prestamo, con monto original, desembolsado, no desembolsado y cancelado. Es la "
+            "fuente de los desembolsos del BIRF: el servicio de proyectos no los publica."
+        ),
+    ),
+    Fuente(
+        clave="ida_creditos",
+        institucion="IDA, estado de creditos",
+        carpeta="gbm",
+        url=(
+            "https://datacatalogapi.worldbank.org/dexapps/fone/api/apiservice"
+            "?datasetId=DS00001&resourceId=RS00001&type=json&top=20000"
+        ),
+        extension="json",
+        descripcion=(
+            "IDA Statement of Credits, Grants and Guarantees, ultima foto disponible, via Finances "
+            "One. Una fila por credito o donacion. Es la fuente de los desembolsos de la IDA."
         ),
     ),
     Fuente(
@@ -135,11 +169,44 @@ FUENTES: tuple[Fuente, ...] = (
         clave="caf_actividades",
         institucion="CAF",
         carpeta="caf",
-        url="",  # se resuelve en tiempo de ejecucion, ver resolver_caf()
+        url="",  # se resuelve en tiempo de ejecucion, ver resolver_iati()
         extension="xml",
         descripcion=(
             "Archivo de actividades IATI de CAF. La URL del recurso cambia con cada "
             "publicacion, por eso se resuelve contra el registro y no se hardcodea."
+        ),
+    ),
+    Fuente(
+        clave="fonplata_actividades",
+        institucion="FONPLATA",
+        carpeta="fonplata",
+        url="",  # se resuelve en tiempo de ejecucion, ver resolver_iati()
+        extension="xml",
+        descripcion=(
+            "Archivo de actividades IATI de FONPLATA. 127 operaciones en la version de julio de "
+            "2026, todas en dolares."
+        ),
+    ),
+    Fuente(
+        clave="bcie_actividades",
+        institucion="BCIE",
+        carpeta="bcie",
+        url="",  # se resuelve en tiempo de ejecucion, ver resolver_iati()
+        extension="xml",
+        descripcion=(
+            "Archivo de actividades IATI del BCIE. El banco lo actualiza sin cambiarle el nombre: "
+            "tenia 86 operaciones en agosto y 120 el 29/09/2026."
+        ),
+    ),
+    Fuente(
+        clave="iati_sector",
+        institucion="IATI, lista de codigos de sector",
+        carpeta="referencia",
+        url="https://iatistandard.org/reference_downloads/203/codelists/downloads/clv3/json/en/Sector.json",
+        extension="json",
+        descripcion=(
+            "Lista oficial de codigos de sector del CAD de la OCDE, 333 codigos. El BCIE publica el "
+            "sector solo como codigo, sin nombre, y esta lista es la que lo traduce."
         ),
     ),
     Fuente(
@@ -163,25 +230,53 @@ FUENTES: tuple[Fuente, ...] = (
     ),
 )
 
-REGISTRO_IATI_CAF = "https://iatiregistry.org/api/3/action/package_search?fq=organization:caf&rows=50"
-API_CKAN_BID = "https://data.iadb.org/api/3/action/package_show?id=idb-projects-dataset"
 
+class ClienteConReintentos(httpx.Client):
+    """Reintenta las respuestas 429 y 5xx, que en estas fuentes son pasajeras.
 
-def resolver_caf(cliente: httpx.Client) -> str:
-    """Devuelve la URL del archivo de actividades vigente de CAF en el registro IATI.
-
-    CAF publica dos archivos: el de actividades (las operaciones, que es el que interesa) y
-    el de organizacion (presupuestos institucionales). La URL de cada uno cambia con cada
-    publicacion, asi que se resuelve contra el registro en vez de fijarla.
+    El 29/09/2026 el servicio del Banco Mundial devolvio un 503 en la pagina 23 de 29 y la
+    actualizacion entera se freno. Un error del servidor que se resuelve solo no deberia obligar
+    a volver a descargar todo. Los errores 4xx no se reintentan: dicen que el pedido esta mal.
     """
-    datos = cliente.get(REGISTRO_IATI_CAF).raise_for_status().json()
+
+    ESPERAS = (5, 20, 60)
+
+    def send(self, request, **kwargs):
+        for espera in self.ESPERAS:
+            respuesta = super().send(request, **kwargs)
+            if respuesta.status_code != 429 and respuesta.status_code < 500:
+                return respuesta
+            print(f"    {respuesta.status_code}, reintento en {espera} s", flush=True)
+            respuesta.close()
+            time.sleep(espera)
+        return super().send(request, **kwargs)
+
+
+API_CKAN_BID = "https://data.iadb.org/api/3/action/package_show?id=idb-projects-dataset"
+REGISTRO_IATI = "https://iatiregistry.org/api/3/action/package_search?fq=organization:{organizacion}&rows=50"
+
+# Organizacion de cada banco en el registro IATI. Cada uno publica dos paquetes, el de actividades
+# (las operaciones, que es el que interesa) y el de organizacion (presupuestos institucionales). El
+# de actividades es el unico cuyo nombre contiene "act": caf-actfile, fonplata_act_trans y
+# bcie-activity, verificado el 29/09/2026.
+ORGANIZACION_IATI = {"caf_actividades": "caf", "fonplata_actividades": "fonplata", "bcie_actividades": "bcie"}
+
+
+def resolver_iati(cliente: httpx.Client, organizacion: str) -> str:
+    """Devuelve la URL vigente del archivo de actividades de un banco en el registro IATI.
+
+    La URL cambia con cada publicacion, porque el nombre del archivo lleva la fecha, asi que se
+    resuelve contra el registro en lugar de fijarla. Sirve para los tres bancos del corpus que
+    publican en el estandar: CAF, FONPLATA y BCIE.
+    """
+    datos = cliente.get(REGISTRO_IATI.format(organizacion=organizacion)).raise_for_status().json()
     for paquete in datos["result"]["results"]:
-        if "actfile" not in paquete["name"]:
+        if "act" not in paquete["name"]:
             continue
         for recurso in paquete.get("resources", []):
             if recurso.get("url"):
                 return recurso["url"]
-    raise RuntimeError("no se encontro el archivo de actividades de CAF en el registro IATI")
+    raise RuntimeError(f"no se encontro el archivo de actividades de {organizacion} en el registro IATI")
 
 
 def resolver_bid(cliente: httpx.Client, idioma: str = "EN") -> str:
@@ -320,8 +415,9 @@ def descargar(fuente: Fuente, cliente: httpx.Client) -> bool:
 
     print(f"  {fuente.institucion} ...", flush=True)
     try:
-        if fuente.clave in ("caf_actividades", "bid_proyectos"):
-            url = resolver_caf(cliente) if fuente.clave == "caf_actividades" else resolver_bid(cliente)
+        if fuente.clave in ORGANIZACION_IATI or fuente.clave == "bid_proyectos":
+            url = (resolver_iati(cliente, ORGANIZACION_IATI[fuente.clave])
+                   if fuente.clave in ORGANIZACION_IATI else resolver_bid(cliente))
             fuente = Fuente(**{**fuente.__dict__, "url": url})
             print(f"    resuelto a {url}", flush=True)
 
@@ -357,7 +453,7 @@ def main(claves: list[str]) -> int:
         return 1
 
     print(f"Descargando {len(fuentes)} fuente(s) a {CRUDO.relative_to(RAIZ)}/\n")
-    with httpx.Client(headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT) as cliente:
+    with ClienteConReintentos(headers={"User-Agent": USER_AGENT}, timeout=TIMEOUT) as cliente:
         resultados = [descargar(f, cliente) for f in fuentes]
 
     ok = sum(resultados)

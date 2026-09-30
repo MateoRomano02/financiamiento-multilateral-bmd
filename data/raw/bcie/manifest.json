@@ -1,0 +1,45 @@
+{
+  "descripcion": "Descargas desde las fuentes oficiales. Se regeneran con scripts/descargar_fuentes.py.",
+  "descargas": [
+    {
+      "archivo": "bcie_actividades_2026-09-29.xml",
+      "institucion": "BCIE",
+      "url_origen": "https://datosabiertos.bcie.org/dataset/00aab7f5-c391-4343-b1c8-bdb9f8d4a9fc/resource/0b5a7cdb-f2cd-4ad7-834b-423332e51c0c/download/bcie-2025-12-29.xml",
+      "fecha_descarga": "2026-09-30T00:27:02+00:00",
+      "bytes": 2618912,
+      "registros": 120,
+      "descripcion": "Archivo de actividades IATI del BCIE. El banco lo actualiza sin cambiarle el nombre: tenia 86 operaciones en agosto y 120 el 29/09/2026.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "bcie_actividades_2026-09-29.xml",
+      "institucion": "BCIE",
+      "url_origen": "https://datosabiertos.bcie.org/dataset/00aab7f5-c391-4343-b1c8-bdb9f8d4a9fc/resource/0b5a7cdb-f2cd-4ad7-834b-423332e51c0c/download/bcie-2025-12-29.xml",
+      "fecha_descarga": "2026-09-30T00:49:28+00:00",
+      "bytes": 2618912,
+      "registros": 120,
+      "descripcion": "Archivo de actividades IATI del BCIE. El banco lo actualiza sin cambiarle el nombre: tenia 86 operaciones en agosto y 120 el 29/09/2026.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "bcie_actividades_2026-09-29.xml",
+      "institucion": "BCIE",
+      "url_origen": "https://datosabiertos.bcie.org/dataset/00aab7f5-c391-4343-b1c8-bdb9f8d4a9fc/resource/0b5a7cdb-f2cd-4ad7-834b-423332e51c0c/download/bcie-2025-12-29.xml",
+      "fecha_descarga": "2026-09-30T00:52:44+00:00",
+      "bytes": 2618912,
+      "registros": 120,
+      "descripcion": "Archivo de actividades IATI del BCIE. El banco lo actualiza sin cambiarle el nombre: tenia 86 operaciones en agosto y 120 el 29/09/2026.",
+      "version_endpoint": null
+    },
+    {
+      "archivo": "bcie_actividades_2026-09-29.xml",
+      "institucion": "BCIE",
+      "url_origen": "https://datosabiertos.bcie.org/dataset/00aab7f5-c391-4343-b1c8-bdb9f8d4a9fc/resource/0b5a7cdb-f2cd-4ad7-834b-423332e51c0c/download/bcie-2025-12-29.xml",
+      "fecha_descarga": "2026-09-30T00:55:30+00:00",
+      "bytes": 2618912,
+      "registros": 120,
+      "descripcion": "Archivo de actividades IATI del BCIE. El banco lo actualiza sin cambiarle el nombre: tenia 86 operaciones en agosto y 120 el 29/09/2026.",
+      "version_endpoint": null
+    }
+  ]
+}
