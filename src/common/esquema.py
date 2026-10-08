@@ -23,9 +23,20 @@ VARIABLES: dict[str, tuple[str, str]] = {
     "tipo_ventanilla": ("Institución",
         "Soberana si presta a Estados, no soberana si presta a empresas o bancos. En la mayoría de "
         "las instituciones es fija por diseño; en el AIIB y el NDB la fuente la declara fila por fila."),
+    "tipo_prestatario": ("Institución",
+        "Quién recibe el préstamo en CAF, FONPLATA y BCIE, que no publican la ventanilla: soberana "
+        "(Estado nacional), no_soberana (empresa o banco privado), subnacional, banco_publico, "
+        "empresa_publica, multilateral o sin_dato. Sale de reglas sobre el nombre del prestatario; "
+        "las tres categorías intermedias quedan para revisión y no se cuentan en ninguna ventanilla."),
+    "prestatario": ("Institución",
+        "Nombre del prestatario o, en CAF, del ejecutor, tal como lo publica la fuente IATI."),
     "id_proyecto": ("Proyecto",
         "Identificador que le asigna el banco. Es único dentro de cada institución, no entre ellas."),
     "nombre": ("Proyecto", "Nombre de la operación tal como lo publica el banco."),
+    "descripcion": ("Proyecto",
+        "Descripción u objetivo de la operación tal como lo publica el banco, en texto plano. El "
+        "Banco Mundial publica el resumen del proyecto, el BID el objetivo y los bancos IATI la "
+        "descripción de la actividad. La IFC, MIGA, el AIIB y el NDB no la traen en sus descargas."),
     "pais": ("Proyecto",
         "País receptor, o una etiqueta de agregado regional cuando la operación financia varios "
         "países a la vez."),
@@ -34,6 +45,10 @@ VARIABLES: dict[str, tuple[str, str]] = {
     "fecha_aprobacion": ("Fechas y estado",
         "Fecha de aprobación del directorio, en formato ISO. Es la que ordena las series anuales."),
     "anio_aprobacion": ("Fechas y estado", "Año de la fecha de aprobación."),
+    "anio_fiscal": ("Fechas y estado",
+        "Año fiscal del banco cuando no coincide con el calendario. En el Grupo Banco Mundial va de "
+        "julio a junio y lleva el número del año en que termina, que es como cierran sus informes "
+        "anuales. Vacío en los bancos que usan año calendario."),
     "estado": ("Fechas y estado",
         "Estado de la operación en el catálogo común: propuesto, aprobado, en implementación, "
         "cerrado, cancelado o desconocido."),
@@ -43,6 +58,10 @@ VARIABLES: dict[str, tuple[str, str]] = {
         "Monto comprometido por el banco al aprobar la operación, en dólares corrientes y en "
         "unidades, no en millones. Si la fuente publica en otra moneda, se convierte con el "
         "promedio anual del tipo de cambio del año de aprobación."),
+    "monto_aprobado_original_usd": ("Montos",
+        "Monto que aprobó el directorio en la aprobación, antes de cancelaciones parciales, cuando "
+        "la fuente lo publica aparte del vigente, en dólares corrientes y en unidades. Hoy solo el "
+        "NDB, desde el anexo de su informe anual; en el resto de las instituciones queda vacío."),
     "monto_desembolsado_usd": ("Montos",
         "Monto efectivamente desembolsado hasta la fecha de la fuente, en dólares corrientes. "
         "Queda vacío cuando el banco no lo publica."),
@@ -51,8 +70,17 @@ VARIABLES: dict[str, tuple[str, str]] = {
     "costo_total_proyecto_usd": ("Montos",
         "Costo total del proyecto, que incluye el aporte del banco más el de otras fuentes y la "
         "contraparte local. Permite medir qué proporción del proyecto financia el banco."),
+    "aporte_terceros_usd": ("Montos",
+        "Fondos de terceros que el banco administra dentro de la operación, sobre todo donaciones de "
+        "fondos fiduciarios de donantes. Solo el Banco Mundial lo publica (campo grantamt). No forma "
+        "parte del monto aprobado y se anota en una sola fila por proyecto."),
     "instrumento": ("Clasificación del banco",
         "Tipo de operación según el banco: préstamo, garantía, inversión de capital, cooperación técnica."),
+    "forma_financiamiento": ("Clasificación del banco",
+        "Forma del financiamiento con el criterio de la dirección: prestamo, donacion, garantia u otro "
+        "(capital accionario, bonos, gestión de riesgo), y mixto si la operación combina más de una "
+        "sin separar el monto. Sale del campo de cada fuente; en FONPLATA y BCIE la fuente declara "
+        "préstamo para todas sus operaciones, y en el AIIB y el NDB queda vacía porque no la publican."),
     "sector": ("Clasificación del banco",
         "Sector tal como lo clasifica el banco. Cada institución usa su propio catálogo, así que no "
         "es comparable entre bancos."),

@@ -218,6 +218,19 @@ FUENTES: tuple[Fuente, ...] = (
         descripcion="Listado de proyectos del NDB en HTML estatico.",
     ),
     Fuente(
+        clave="ndb_informe_anual",
+        institucion="NDB",
+        carpeta="ndb",
+        url="https://www.ndb.int/wp-content/uploads/2026/07/NDB_AnnualReport2025.pdf",
+        extension="pdf",
+        descripcion=(
+            "Informe anual 2025 del NDB. Su anexo 'List of Projects Approved by NDB' (paginas 181 a "
+            "189 del PDF) lista las 139 operaciones aprobadas 2016-2025 con el monto aprobado "
+            "original y las notas de cancelacion; lo lee src/common/ndb_anexo.py. La URL lleva el "
+            "mes de publicacion: si el banco publica el informe 2026, hay que actualizarla."
+        ),
+    ),
+    Fuente(
         clave="aiib_proyectos",
         institucion="AIIB",
         carpeta="aiib",

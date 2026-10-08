@@ -27,6 +27,7 @@ se aplica en el análisis, para que el corpus conserve la traza de lo que la fue
 from __future__ import annotations
 
 import csv
+import html
 import json
 import re
 import xml.etree.ElementTree as ET
@@ -37,6 +38,8 @@ from pathlib import Path
 import pandas as pd
 
 from .esquema import COLUMNAS, VENTANILLA_POR_INSTITUCION
+from .prestatario import prestatario_iati
+from .ndb_anexo import URL_INFORME, emparejar, leer_anexo
 from .tipo_de_cambio import a_dolares, normalizar_moneda
 
 RAIZ = Path(__file__).resolve().parent.parent.parent
@@ -214,7 +217,11 @@ def _cerrar(filas: list[dict]) -> pd.DataFrame:
     for col in COLUMNAS:
         if col not in df.columns:
             df[col] = None
-    df["anio_aprobacion"] = pd.to_datetime(df["fecha_aprobacion"], errors="coerce").dt.year
+    fecha = pd.to_datetime(df["fecha_aprobacion"], errors="coerce")
+    df["anio_aprobacion"] = fecha.dt.year
+    # El Grupo Banco Mundial cierra el año en junio: lo aprobado en julio de 2024 es del año
+    # fiscal 2025. Lo pidió la dirección el 8/10 para poder contrastar contra sus informes anuales.
+    df["anio_fiscal"] = (fecha.dt.year + (fecha.dt.month >= 7)).where(df["banco_grupo"] == "GBM")
     return df[list(COLUMNAS)]
 
 
@@ -230,6 +237,13 @@ def _cerrar(filas: list[dict]) -> pd.DataFrame:
 # casos en que los dos sistemas difieren entre dos y diecisiete veces sobre el monto.
 DIAS_TOLERANCIA_PRESTAMO = 60
 MONTO_TOLERANCIA_PRESTAMO = 0.20
+
+
+# La IDA no publica si cada crédito es préstamo o donación: lo dice el prefijo del número. Los
+# IDAD, IDAE e IDAH no tienen cronograma de repago ni registran ningún pago, y los IDAG son
+# garantías parciales de riesgo (verificado el 8/10/2026 sobre el estado de créditos; el archivo no
+# trae diccionario de prefijos). El resto son créditos.
+FORMA_PREFIJO_IDA = {"IDAD": "donacion", "IDAE": "donacion", "IDAH": "donacion", "IDAG": "garantia"}
 
 
 @lru_cache(maxsize=1)
@@ -251,9 +265,14 @@ def prestamos_banco_mundial() -> pd.DataFrame:
         d["fecha_prestamo"] = pd.to_datetime(d["board_approval_date"], format="%d-%b-%Y", errors="coerce")
         for col in ("original", "desembolsado"):
             d[col] = pd.to_numeric(d[col], errors="coerce")
-        partes.append(d[["project_id", "ventanilla", "fecha_prestamo", "original", "desembolsado"]])
+        if ventanilla == "BIRF":
+            d["forma"] = d["loan_type"].map(lambda t: "garantia" if t in ("GURB", "GUBF") else "prestamo")
+        else:
+            prefijo = d["credit_number"].str.extract(r"^([A-Z]+)", expand=False)
+            d["forma"] = prefijo.map(lambda p: FORMA_PREFIJO_IDA.get(p, "prestamo"))
+        partes.append(d[["project_id", "ventanilla", "fecha_prestamo", "original", "desembolsado", "forma"]])
     if not partes:
-        return pd.DataFrame(columns=["project_id", "ventanilla", "fecha_prestamo", "original", "desembolsado"])
+        return pd.DataFrame(columns=["project_id", "ventanilla", "fecha_prestamo", "original", "desembolsado", "forma"])
     return pd.concat(partes, ignore_index=True)
 
 
@@ -283,7 +302,53 @@ def _desembolsos_banco_mundial(df: pd.DataFrame) -> pd.DataFrame:
     coincide = (por_operacion["original"] / aprobado - 1).abs() <= MONTO_TOLERANCIA_PRESTAMO
     df["monto_desembolsado_usd"] = df["monto_desembolsado_usd"].astype("float64")
     df.loc[por_operacion.index[coincide], "monto_desembolsado_usd"] = por_operacion.loc[coincide, "desembolsado"]
+    # La forma no depende del monto: alcanza con que el préstamo sea de la misma operación. Una
+    # operación de la IDA que combina crédito y donación queda como mixta.
+    formas = unidos.groupby("index")["forma"].agg(lambda f: f.iloc[0] if f.nunique() == 1 else "mixto")
+    df.loc[formas.index, "forma_financiamiento"] = formas
     return df
+
+
+# Forma del financiamiento, criterio de la dirección del 8/10: préstamo, donación, garantía u otro
+# (capital accionario, gestión de riesgo, bonos). "mixto" cuando la fuente declara más de una para la
+# misma operación sin separar el monto. El mapeo de cada fuente y su evidencia: research/forma-de-financiamiento.md.
+FORMA_IFC = {"Loan": "prestamo", "Guarantee": "garantia", "Equity": "otro", "Risk Management": "otro"}
+FORMA_IATI = {"421": "prestamo", "410": "prestamo", "110": "donacion", "1100": "garantia", "510": "otro"}
+FORMA_BID = {"Loan Operation": "prestamo", "Container": "prestamo", "Technical Cooperation": "donacion",
+             "Investment Grants": "donacion", "Grant Financing Product": "donacion",
+             "Guarantee": "garantia", "Equity": "otro"}
+
+
+def _forma_bid(r: dict) -> str | None:
+    """El tipo de operación del BID, corregido por modalidad: hay garantías y donaciones dentro de
+    las operaciones de préstamo y de los contenedores."""
+    if (r.get("modality_cd") or "").strip() in ("PBG", "PCG", "TFP") or (r.get("facility_typ_cd") or "").strip() == "IGF":
+        return "garantia"
+    if (r.get("facility_typ_cd") or "").strip() == "FFG":
+        return "donacion"
+    return FORMA_BID.get((r.get("opertyp_nm") or "").strip())
+
+
+def _forma_bid_invest(valor: str | None) -> str | None:
+    v = (valor or "").replace("&amp;", "&").strip()
+    if not v or v == "Not Specified":
+        return None
+    if "&" in v:
+        return "mixto"
+    if "Loan" in v:
+        return "prestamo"
+    if v == "Guarantee":
+        return "garantia"
+    return "otro"  # capital, fondos y bonos
+
+
+def _limpiar_texto(valor: object) -> str | None:
+    """Texto plano de una descripción: sin etiquetas HTML, entidades ni espacios repetidos."""
+    if not valor or not isinstance(valor, str):
+        return None
+    texto = html.unescape(html.unescape(valor))
+    texto = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", texto)).strip()
+    return texto or None
 
 
 def normalizar_gbm(ruta: Path, relevamiento: str) -> pd.DataFrame:
@@ -310,15 +375,22 @@ def normalizar_gbm(ruta: Path, relevamiento: str) -> pd.DataFrame:
             # contra el catálogo completo de campos el 15/09/2026).
             "instrumento": None,
             "sector": (r.get("mjsector") or "").split(",")[0].strip() or None,
+            "descripcion": _limpiar_texto(r.get("project_abstract")),
         }
+        # Los fondos de terceros que administra el banco (donantes, fondos fiduciarios) van aparte
+        # del aporte del banco, por criterio de la dirección del 8/10. Se anotan en una sola de las
+        # filas del proyecto para que sumar la columna no los cuente dos veces.
+        terceros = a_numero(r.get("grantamt")) or None
         for institucion, campo in (("BIRF", "curr_ibrd_commitment"), ("IDA", "idacommamt")):
             monto = a_numero(r.get(campo))
             if not monto:
                 continue
             filas.append(
                 {**_fila_base(institucion, "GBM", url, relevamiento), **comunes,
-                 "id_proyecto": f"{r.get('id')}", "monto_aprobado_usd": monto}
+                 "id_proyecto": f"{r.get('id')}", "monto_aprobado_usd": monto,
+                 "aporte_terceros_usd": terceros}
             )
+            terceros = None
     return _desembolsos_banco_mundial(_cerrar(filas))
 
 
@@ -347,6 +419,7 @@ def normalizar_ifc(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "monto_aprobado_usd": a_numero(
                  r.get("total_ifc_investment_as_approved_by_boardmillion__usd"), 1e6),
              "instrumento": r.get("product_line"),
+             "forma_financiamiento": FORMA_IFC.get(r.get("product_line")),
              "sector": r.get("industry")}
         )
     return _cerrar(filas)
@@ -377,6 +450,9 @@ def normalizar_miga(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "estado_original": None,
              "monto_aprobado_usd": a_numero(r.get("gross_issued_amount")),
              "instrumento": r.get("product_line"),
+             # MIGA emite garantías de inversión (seguro de riesgo político y afines), todo su
+             # catálogo es garantía.
+             "forma_financiamiento": "garantia",
              "sector": r.get("business_sector")}
         )
     return _cerrar(filas)
@@ -411,6 +487,8 @@ def normalizar_bid(ruta: Path, relevamiento: str) -> pd.DataFrame:
              # local aporta el pais. El NDB lo trae en prosa y solo en 37 de 170 fichas.
              "costo_total_proyecto_usd": a_numero(r.get("totl_cost_orig")),
              "instrumento": r.get("opertyp_nm"),
+             "forma_financiamiento": _forma_bid(r),
+             "descripcion": _limpiar_texto(r.get("objtv")),
              "sector": (r.get("sector_nm") or "").strip() or None}
         )
     return _cerrar(filas)
@@ -446,6 +524,8 @@ def normalizar_bid_invest(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "monto_original": a_numero(r.get("iic_financing_amount")),
              "moneda_original": (r.get("currency") or "").strip() or None,
              "instrumento": (r.get("Investment_instrument") or "").replace("&amp;", "y") or None,
+             "forma_financiamiento": _forma_bid_invest(r.get("Investment_instrument")),
+             "descripcion": _limpiar_texto(r.get("description")),
              "sector": (r.get("sector") or "").strip() or None}
         )
     return _cerrar(filas)
@@ -544,8 +624,15 @@ def normalizar_iati(ruta: Path, relevamiento: str, institucion: str) -> pd.DataF
         fecha = a_fecha(_fecha_de_compromiso(act))
         anio = int(fecha[:4]) if fecha else None
         codigo = estado.get("code") if estado is not None else None
+        prestatario, tipo_prestatario, _ = prestatario_iati(act, institucion, pais)
+        tipo_fin = act.find("default-finance-type")
+        descripcion = act.find("description")
         filas.append(
             {**_fila_base(institucion, institucion, url, relevamiento),
+             "prestatario": prestatario or None,
+             "tipo_prestatario": tipo_prestatario,
+             # Solo los casos claros entran a una ventanilla; los intermedios quedan para revisión.
+             "tipo_ventanilla": tipo_prestatario if tipo_prestatario in ("soberana", "no_soberana") else None,
              "id_proyecto": (act.findtext("iati-identifier") or "").strip(),
              "nombre": "".join(titulo.itertext()).strip() if titulo is not None else None,
              "pais": pais,
@@ -557,6 +644,8 @@ def normalizar_iati(ruta: Path, relevamiento: str, institucion: str) -> pd.DataF
              "monto_desembolsado_usd": a_dolares(transacciones.get("3"), moneda, anio),
              "moneda_original": normalizar_moneda(moneda),
              "monto_original": transacciones.get("2"),
+             "forma_financiamiento": FORMA_IATI.get(tipo_fin.get("code") if tipo_fin is not None else None),
+             "descripcion": _limpiar_texto("".join(descripcion.itertext()) if descripcion is not None else None),
              "sector": _sector_iati(act)}
         )
     return _cerrar(filas)
@@ -597,6 +686,78 @@ def normalizar_aiib(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "sector": r.get("sector")}
         )
     return _cerrar(filas)
+
+
+def _unir_anexo_ndb(filas: list[dict], ruta: Path, relevamiento: str) -> list[dict]:
+    """Une al corpus del NDB el anexo de operaciones aprobadas de su informe anual.
+
+    La ficha web publica el monto vigente: deja sin monto a las operaciones canceladas y muestra el
+    remanente de las canceladas en parte. El anexo trae lo que aprobó el directorio, y con eso:
+    el monto original va en su propia columna sin tocar el vigente; si la ficha no tiene monto se
+    completa con el del anexo; las canceladas por completo pasan a "cancelado"; y la operación que
+    el listado web no tiene se agrega como fila, con la fuente apuntando al PDF.
+
+    Sin PDF descargado devuelve las filas como vienen, para que el corpus se pueda armar igual.
+
+    Krasnodar Cable Car (Rusia, 2019) está en el listado web y no figura en el anexo. El informe
+    2019 solo habla de su preparación, así que probablemente nunca se aprobó, pero eso no está
+    probado: su estado queda como lo publica la ficha y se reporta aparte.
+    """
+    informes = sorted(ruta.parent.glob("ndb_informe_anual_*.pdf"))
+    if not informes:
+        return filas
+
+    por_fila: dict[int, list] = {}
+    faltantes = []
+    for operacion in leer_anexo(informes[-1]):
+        i = emparejar(operacion, filas)
+        if i is None:
+            faltantes.append(operacion)
+        else:
+            por_fila.setdefault(i, []).append(operacion)
+
+    def original_usd(operaciones: list) -> float | None:
+        # Promedio anual del año de aprobación que declara el anexo, igual que el resto del corpus.
+        montos = [a_dolares(o.monto_millones * 1e6, o.moneda_monto, o.anio_aprobacion) for o in operaciones]
+        return None if any(m is None for m in montos) else sum(montos)
+
+    for i, operaciones in por_fila.items():
+        fila = filas[i]
+        fila["monto_aprobado_original_usd"] = original_usd(operaciones)
+        if fila["monto_aprobado_usd"] is None or pd.isna(fila["monto_aprobado_usd"]):
+            fila["monto_aprobado_usd"] = fila["monto_aprobado_original_usd"]
+            if len(operaciones) == 1 and fila["monto_original"] is None:
+                fila["monto_original"] = operaciones[0].monto_millones * 1e6
+                fila["moneda_original"] = normalizar_moneda(operaciones[0].moneda_monto)
+        if all(o.cancelada_total for o in operaciones):
+            nota = "; ".join(f"Cancelled in {o.anio_cancelacion} (informe anual)" for o in operaciones)
+            fila["estado"] = "cancelado"
+            fila["estado_original"] = f"{fila['estado_original']}; {nota}" if fila["estado_original"] else nota
+        elif fila["estado"] == "desconocido":
+            # La ficha no publicaba monto y el estado quedaba sin derivar; el anexo es de operaciones
+            # aprobadas y sin nota de cancelación total, así que está aprobada.
+            fila["estado"] = "aprobado"
+            fila["estado_original"] = "Approved (informe anual)"
+
+    for o in faltantes:
+        nota = f"{o.nota.rstrip('.')} (informe anual)" if o.nota else None
+        filas.append(
+            {**_fila_base("NDB", "NDB", URL_INFORME, relevamiento),
+             "tipo_ventanilla": "soberana" if o.tipo == "soberana" else "no_soberana",
+             "id_proyecto": f"{URL_INFORME}#{o.numero}",
+             "nombre": o.nombre,
+             "pais": o.pais,
+             "url_proyecto": None,
+             "fecha_aprobacion": a_fecha(o.anio_aprobacion),
+             "estado": "cancelado" if o.cancelada_total else "aprobado",
+             "estado_original": nota or "Approved (informe anual)",
+             "monto_aprobado_usd": original_usd([o]),
+             "monto_aprobado_original_usd": original_usd([o]),
+             "monto_original": o.monto_millones * 1e6,
+             "moneda_original": normalizar_moneda(o.moneda_monto),
+             "instrumento": "Sovereign" if o.tipo == "soberana" else "Non-Sovereign"}
+        )
+    return filas
 
 
 def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
@@ -677,7 +838,7 @@ def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "instrumento": tipo,
              "sector": campo(r'class="project-card-cat text-small-bold">(.*?)</div>', b)}
         )
-    return _cerrar(filas)
+    return _cerrar(_unir_anexo_ndb(filas, ruta, relevamiento))
 
 
 NORMALIZADORES = {

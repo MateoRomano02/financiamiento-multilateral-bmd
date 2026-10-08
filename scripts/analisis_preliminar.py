@@ -110,6 +110,21 @@ def ventanillas(df: pd.DataFrame, desde: int = 2014, constantes: bool = False) -
                     "pct_no_soberana": round(100 * nos / total, 1),
                 }
             )
+    # Los bancos sin ventanillas separadas en instituciones (AIIB, NDB y, cuando se clasifiquen,
+    # CAF, BCIE y FONPLATA) se miden con la ventanilla que tiene cada fila.
+    # El denominador es todo lo del banco: en CAF, BCIE y FONPLATA hay operaciones en revisión
+    # (subnacionales, bancos y empresas públicas) que no se cuentan como no soberanas, así que la
+    # participación es un piso.
+    clasificados = df.loc[df["tipo_ventanilla"].notna(), "banco_grupo"].unique()
+    por_fila = df[~df["banco_grupo"].isin(["GBM", "GBID"]) & df["banco_grupo"].isin(clasificados)
+                  & df[columna].notna() & (df["anio_aprobacion"] >= desde)]
+    for (grupo, anio), tramo in por_fila.groupby(["banco_grupo", "anio_aprobacion"]):
+        nos = tramo.loc[tramo["tipo_ventanilla"] == "no_soberana", columna].sum()
+        total = tramo[columna].sum()
+        if total:
+            filas.append({"grupo": grupo, "anio": int(anio),
+                          "soberana_mm": round((total - nos) / 1e6), "no_soberana_mm": round(nos / 1e6),
+                          "pct_no_soberana": round(100 * nos / total, 1)})
     return pd.DataFrame(filas)
 
 

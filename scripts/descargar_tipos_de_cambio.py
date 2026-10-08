@@ -43,6 +43,7 @@ SERIES = {
     "INR": {"serie": "DEXINUS", "invertida": False, "nombre": "rupia india"},
     "BRL": {"serie": "DEXBZUS", "invertida": False, "nombre": "real brasileño"},
     "EUR": {"serie": "DEXUSEU", "invertida": True, "nombre": "euro"},
+    "CHF": {"serie": "DEXSZUS", "invertida": False, "nombre": "franco suizo"},
 }
 
 

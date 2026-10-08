@@ -8,6 +8,8 @@ dependencies = [
     "openpyxl>=3.1",   # lectura/escritura de Excel
     "httpx>=0.27",     # cliente HTTP para APIs y descargas
     "pyyaml>=6.0",     # configuracion de fuentes por banco
+    "pypdf>=6.19.0",
+    "pdfplumber>=0.11.10",
 ]
 
 [project.optional-dependencies]

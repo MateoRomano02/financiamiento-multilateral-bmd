@@ -19,7 +19,7 @@ def operaciones(*filas):
 def prestamos(*filas):
     return pd.DataFrame(
         [{"project_id": p, "ventanilla": v, "fecha_prestamo": pd.Timestamp(f), "original": o,
-          "desembolsado": d} for p, v, f, o, d in filas]
+          "desembolsado": d, "forma": (resto[0] if resto else "prestamo")} for p, v, f, o, d, *resto in filas]
     )
 
 
@@ -56,3 +56,12 @@ def test_la_diferencia_de_cambio_de_la_ida_se_tolera(monkeypatch):
     ops = operaciones(("IDA", "P4", "2019-02-01", 100e6))
     prest = prestamos(("P4", "IDA", "2019-02-20", 108e6, 104e6))
     assert unir(monkeypatch, ops, prest) == [104e6]
+
+
+def test_una_operacion_ida_con_credito_y_donacion_queda_mixta(monkeypatch):
+    """La IDA aprueba en la misma operación un crédito y una donación (prefijos IDA e IDAE)."""
+    ops = operaciones(("IDA", "P4", "2022-06-01", 150e6))
+    prest = prestamos(("P4", "IDA", "2022-06-01", 100e6, 10e6, "prestamo"),
+                      ("P4", "IDA", "2022-06-01", 50e6, 5e6, "donacion"))
+    monkeypatch.setattr(normalizar, "prestamos_banco_mundial", lambda: prest)
+    assert normalizar._desembolsos_banco_mundial(ops)["forma_financiamiento"].tolist() == ["mixto"]
