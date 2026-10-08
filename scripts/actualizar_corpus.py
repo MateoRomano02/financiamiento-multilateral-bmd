@@ -42,6 +42,7 @@ PROCESO = [
     ("Análisis y tablas", ["scripts/analisis_preliminar.py", "--csv"]),
     ("Diccionario de variables", ["scripts/diccionario_variables.py"]),
     ("Tablas para los tableros", ["scripts/tablas_tableros.py"]),
+    ("Explorador del corpus", ["scripts/explorador_corpus.py"]),
 ]
 
 
