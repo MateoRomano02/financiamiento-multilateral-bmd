@@ -18,12 +18,19 @@ from pathlib import Path
 
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import analisis_preliminar as ap  # noqa: E402  mismas reglas que el informe
+
 RAIZ = Path(__file__).resolve().parent.parent
 CORPUS = RAIZ / "data" / "processed" / "corpus_2014_2025.csv"
 SALIDA = RAIZ / "data" / "processed" / "explorador" / "explorador-corpus.html"
 
 COLUMNAS = ["banco_grupo", "institucion", "tipo_ventanilla", "nombre", "pais", "anio_aprobacion",
-            "estado", "monto_aprobado_usd", "monto_desembolsado_usd", "sector", "url_proyecto"]
+            "estado", "monto_aprobado_usd", "monto_desembolsado_usd", "sector", "url_proyecto",
+            "monto_constante_usd", "region"]
+
+# A: America Latina y el Caribe (con sus agregados), R: resto del mundo, G: agregado sin pais.
+REGION = {"ALC": "A", "ALC (agregado regional)": "A", "resto del mundo": "R", "otro agregado regional": "G"}
 
 PAGINA = """<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
@@ -51,7 +58,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 </style></head><body>
 <h1>Explorador del corpus de financiamiento multilateral</h1>
 <p class="nota">Proyecto CIAI Nº 34, UNSAM. Operaciones aprobadas 2014 a 2025, sin canceladas, armonizadas desde
-las fuentes oficiales de cada banco. Descargas del __FECHA__. Montos aprobados en millones de dólares corrientes.
+las fuentes oficiales de cada banco. Descargas del __FECHA__. Montos aprobados en millones de dólares, corrientes o constantes de 2025 según el selector.
 Sectores tal como los nombra cada banco. Ojo: la IFC anota el tope entero de algunas facilidades marco en cada banco participante, así que sus montos en mercados financieros están inflados. Borrador de trabajo, no para citar.</p>
 <div class="filtros">
 <div><label>Grupo</label><select id="f-grupo"></select></div>
@@ -61,21 +68,33 @@ Sectores tal como los nombra cada banco. Ojo: la IFC anota el tope entero de alg
 <div><label>Hasta</label><select id="f-hasta"></select></div>
 <div><label>País contiene</label><input id="f-pais" placeholder="Argentina"></div>
 <div><label>Nombre o sector contiene</label><input id="f-texto" placeholder="solar, energy"></div>
+<div><label>Dólares</label><select id="f-usd"><option value="c">Corrientes</option><option value="k">Constantes de 2025</option></select></div>
 </div>
 <div class="kpis">
 <div class="kpi"><span class="nota">Operaciones</span><b id="k-ops"></b></div>
-<div class="kpi"><span class="nota">Aprobado, USD M</span><b id="k-monto"></b></div>
+<div class="kpi"><span class="nota" id="k-monto-et">Aprobado, USD M</span><b id="k-monto"></b></div>
 <div class="kpi"><span class="nota">Con desembolso publicado</span><b id="k-des"></b></div>
 <div class="kpi"><span class="nota">Países</span><b id="k-pais"></b></div>
 </div>
 <h2>Monto aprobado por año</h2><div class="anios" id="g-anios"></div><div class="anios-et" id="g-anios-et"></div>
+<h2>Comparación entre bancos</h2>
+<p class="nota">Con los filtros elegidos. Cinco principales: porción del monto que se llevan los cinco países que más
+reciben, sin contar los agregados sin país. A ALC: incluye los agregados regionales de la región.</p>
+<div class="tabla"><table><thead><tr><th>Institución</th><th class="n">Operaciones</th><th class="n">USD M</th>
+<th class="n">% del total</th><th class="n">Monto mediano</th><th class="n">A ALC</th><th class="n">Cinco principales</th>
+<th>Principal receptor</th></tr></thead><tbody id="t-bancos"></tbody></table></div>
+<h2>Ventanilla no soberana, por grupo</h2>
+<p class="nota">Participación de la ventanilla no soberana sobre el total aprobado de cada grupo, con el criterio del
+informe: MIGA y BID Lab fuera de las dos categorías y sin los topes de facilidad repetidos de la IFC. No cambia con
+los filtros. En 2014 y 2015 la cartera privada del BID figura como soberana (ver informe v3, sección 2).</p>
+<div class="tabla"><table><thead><tr><th>Año</th><th class="n">Grupo Banco Mundial</th><th class="n">Grupo BID</th></tr></thead><tbody id="t-vent"></tbody></table></div>
 <h2>Diez principales países</h2><div class="barras" id="g-paises"></div>
 <h2>Diez principales sectores</h2><div class="barras" id="g-sectores"></div>
 <h2>Operaciones <span class="nota" id="t-nota"></span></h2>
 <p><button id="b-csv">Descargar las filtradas como CSV</button></p>
 <div class="tabla"><table><thead><tr><th>Año</th><th>Institución</th><th>Operación</th><th>País</th><th>Sector</th><th class="n">USD M</th></tr></thead><tbody id="t-cuerpo"></tbody></table></div>
 <script>
-const C=__COLUMNAS__, D=__DATOS__;
+const C=__COLUMNAS__, D=__DATOS__, V=__VENTANILLAS__;
 const i=Object.fromEntries(C.map((c,k)=>[c,k]));
 const fmt=n=>n.toLocaleString('es-AR',{maximumFractionDigits:0});
 const $=id=>document.getElementById(id);
@@ -94,9 +113,24 @@ function filtradas(){
   (!t||(String(r[i.nombre]||'')+' '+String(r[i.sector]||'')).toLowerCase().includes(t)));}
 function barras(el,pares){const m=Math.max(1,...pares.map(x=>x[1]));
  el.innerHTML=pares.map(([k,v])=>`<div><span>${k}</span><span class="b" style="width:${100*v/m}%"></span><span class="n">${fmt(v)}</span></div>`).join('')||'<p class="nota">Sin datos</p>';}
-function sumar(f,c){const o={};f.forEach(r=>{const k=r[i[c]]||'sin dato';o[k]=(o[k]||0)+(r[i.monto_aprobado_usd]||0)/1e6});return o}
+const monto=r=>($('f-usd').value==='k'?r[i.monto_constante_usd]:r[i.monto_aprobado_usd])||0;
+function sumar(f,c){const o={};f.forEach(r=>{const k=r[i[c]]||'sin dato';o[k]=(o[k]||0)+monto(r)/1e6});return o}
+function mediana(xs){if(!xs.length)return 0;xs=[...xs].sort((a,b)=>a-b);const m=xs.length>>1;return xs.length%2?xs[m]:(xs[m-1]+xs[m])/2}
+function porBanco(f,total){const g={};f.forEach(r=>{(g[r[i.institucion]]=g[r[i.institucion]]||[]).push(r)});
+ return Object.entries(g).map(([k,rs])=>{const m=rs.reduce((a,r)=>a+monto(r),0)/1e6;
+  const alc=rs.filter(r=>r[i.region]==='A').reduce((a,r)=>a+monto(r),0)/1e6;
+  const pp={};rs.filter(r=>r[i.pais]&&r[i.region]&&r[i.region]!=='G').forEach(r=>{pp[r[i.pais]]=(pp[r[i.pais]]||0)+monto(r)});
+  const orden=Object.entries(pp).sort((a,b)=>b[1]-a[1]),tp=orden.reduce((a,x)=>a+x[1],0);
+  const top5=tp?100*orden.slice(0,5).reduce((a,x)=>a+x[1],0)/tp:0;
+  return [k,rs.length,m,total?100*m/total:0,mediana(rs.filter(r=>r[i.monto_aprobado_usd]!==null).map(r=>monto(r)/1e6)),m?100*alc/m:0,top5,orden.length?orden[0][0]:'']})
+  .sort((a,b)=>b[2]-a[2])}
+const pct=n=>n.toLocaleString('es-AR',{maximumFractionDigits:1})+'%';
+$('t-vent').innerHTML=[...new Set(V.map(x=>x.anio))].map(a=>{const v=g=>{const x=V.find(y=>y.anio===a&&y.grupo===g);return x?pct(x.pct_no_soberana):''};
+ return `<tr><td>${a}</td><td class="n">${v('Grupo Banco Mundial')}</td><td class="n">${v('Grupo BID')}</td></tr>`}).join('');
 function dibujar(){
- const f=filtradas();const total=f.reduce((a,r)=>a+(r[i.monto_aprobado_usd]||0),0)/1e6;
+ const f=filtradas();const total=f.reduce((a,r)=>a+monto(r),0)/1e6;
+ $('k-monto-et').textContent=$('f-usd').value==='k'?'Aprobado, USD M de 2025':'Aprobado, USD M';
+ $('t-bancos').innerHTML=porBanco(f,total).map(b=>`<tr><td>${b[0]}</td><td class="n">${fmt(b[1])}</td><td class="n">${fmt(b[2])}</td><td class="n">${pct(b[3])}</td><td class="n">${b[4].toLocaleString('es-AR',{maximumFractionDigits:1})}</td><td class="n">${pct(b[5])}</td><td class="n">${pct(b[6])}</td><td>${b[7]}</td></tr>`).join('');
  $('k-ops').textContent=fmt(f.length);$('k-monto').textContent=fmt(total);
  $('k-des').textContent=fmt(f.filter(r=>r[i.monto_desembolsado_usd]!==null).length);
  $('k-pais').textContent=fmt(new Set(f.map(r=>r[i.pais]).filter(Boolean)).size);
@@ -105,9 +139,9 @@ function dibujar(){
  $('g-anios-et').innerHTML=ks.map(a=>`<span>${String(a).slice(2)}</span>`).join('');
  const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,10);
  barras($('g-paises'),top(sumar(f,'pais')));barras($('g-sectores'),top(sumar(f,'sector')));
- const orden=[...f].sort((a,b)=>(b[i.monto_aprobado_usd]||0)-(a[i.monto_aprobado_usd]||0)).slice(0,300);
+ const orden=[...f].sort((a,b)=>monto(b)-monto(a)).slice(0,300);
  $('t-nota').textContent=f.length>300?`(las 300 de mayor monto de ${fmt(f.length)})`:'';
- $('t-cuerpo').innerHTML=orden.map(r=>`<tr><td>${r[i.anio_aprobacion]}</td><td>${r[i.institucion]}</td><td>${r[i.url_proyecto]?`<a href="${r[i.url_proyecto]}" target="_blank" rel="noopener">${r[i.nombre]||'(sin nombre)'}</a>`:(r[i.nombre]||'')}</td><td>${r[i.pais]||''}</td><td>${r[i.sector]||''}</td><td class="n">${r[i.monto_aprobado_usd]===null?'sin dato':fmt(r[i.monto_aprobado_usd]/1e6)}</td></tr>`).join('');
+ $('t-cuerpo').innerHTML=orden.map(r=>`<tr><td>${r[i.anio_aprobacion]}</td><td>${r[i.institucion]}</td><td>${r[i.url_proyecto]?`<a href="${r[i.url_proyecto]}" target="_blank" rel="noopener">${r[i.nombre]||'(sin nombre)'}</a>`:(r[i.nombre]||'')}</td><td>${r[i.pais]||''}</td><td>${r[i.sector]||''}</td><td class="n">${r[i.monto_aprobado_usd]===null?'sin dato':fmt(monto(r)/1e6)}</td></tr>`).join('');
 }
 $('b-csv').onclick=()=>{const q=v=>v===null?'':'"'+String(v).replace(/"/g,'""')+'"';
  const csv=[C.join(',')].concat(filtradas().map(r=>r.map(q).join(','))).join('\\n');
@@ -120,12 +154,18 @@ document.querySelectorAll('select,input').forEach(e=>e.addEventListener('input',
 def main() -> int:
     if not CORPUS.exists():
         raise SystemExit("falta el corpus. Correr antes: uv run python scripts/consolidar.py")
-    df = pd.read_csv(CORPUS, low_memory=False)[COLUMNAS]
+    df = ap.cargar()
+    df["region"] = df["pais"].apply(ap.region_de).map(REGION)
+    df.loc[~df["pais"].apply(ap.es_pais_real) & df["region"].isna(), "region"] = "G"
+    ventanillas = ap.ventanillas(df).to_dict(orient="records")
+    df = df[COLUMNAS].copy()
     df["anio_aprobacion"] = df["anio_aprobacion"].astype(int)
+    df["monto_constante_usd"] = df["monto_constante_usd"].round(0)
     df = df.astype(object).where(df.notna(), None)
     fecha = date.fromtimestamp(CORPUS.stat().st_mtime).strftime("%d/%m/%Y")
     html = (PAGINA.replace("__FECHA__", fecha)
             .replace("__COLUMNAS__", json.dumps(COLUMNAS))
+            .replace("__VENTANILLAS__", json.dumps(ventanillas, ensure_ascii=False))
             .replace("__DATOS__", json.dumps(df.values.tolist(), ensure_ascii=False)))
     SALIDA.parent.mkdir(parents=True, exist_ok=True)
     SALIDA.write_text(html, encoding="utf-8")
