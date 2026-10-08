@@ -88,6 +88,15 @@ reciben, sin contar los agregados sin país. A ALC: incluye los agregados region
 informe: MIGA y BID Lab fuera de las dos categorías y sin los topes de facilidad repetidos de la IFC. No cambia con
 los filtros. En 2014 y 2015 la cartera privada del BID figura como soberana (ver informe v3, sección 2).</p>
 <div class="tabla"><table><thead><tr><th>Año</th><th class="n">Grupo Banco Mundial</th><th class="n">Grupo BID</th></tr></thead><tbody id="t-vent"></tbody></table></div>
+<h2>Comentarios del equipo</h2>
+<p class="nota">Análisis que les gustaría ver, dudas sobre una cifra, ideas de visualización. Quedan firmados con el
+mail con el que entraron y los lee todo el equipo.</p>
+<div class="filtros"><div><label>Sobre</label><select id="c-seccion">
+<option>General</option><option>Explorador</option><option>Comparación entre bancos</option><option>Ventanillas</option>
+<option>Países y sectores</option><option>Algo que me gustaría ver</option></select></div></div>
+<textarea id="c-texto" rows="4" maxlength="4000" style="width:100%;box-sizing:border-box;padding:6px;border:1px solid var(--l);border-radius:4px;font:inherit"></textarea>
+<p><button id="c-enviar">Enviar comentario</button> <span class="nota" id="c-estado"></span></p>
+<div id="c-lista"></div>
 <h2>Diez principales países</h2><div class="barras" id="g-paises"></div>
 <h2>Diez principales sectores</h2><div class="barras" id="g-sectores"></div>
 <h2>Operaciones <span class="nota" id="t-nota"></span></h2>
@@ -146,7 +155,17 @@ function dibujar(){
 $('b-csv').onclick=()=>{const q=v=>v===null?'':'"'+String(v).replace(/"/g,'""')+'"';
  const csv=[C.join(',')].concat(filtradas().map(r=>r.map(q).join(','))).join('\\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='corpus-filtrado.csv';a.click();};
-document.querySelectorAll('select,input').forEach(e=>e.addEventListener('input',dibujar));dibujar();
+document.querySelectorAll('.filtros select,.filtros input').forEach(e=>{if(e.id!=='c-seccion')e.addEventListener('input',dibujar)});dibujar();
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function comentarios(){
+ try{const r=await fetch('/api/comentarios');if(!r.ok)throw 0;const cs=await r.json();
+  $('c-lista').innerHTML=cs.length?cs.map(c=>`<div class="kpi" style="margin:6px 0"><span class="nota">${esc(c.autor)} · ${esc(c.seccion)} · ${esc(c.creado)} UTC</span><p style="margin:4px 0 0;white-space:pre-wrap">${esc(c.texto)}</p></div>`).join(''):'<p class="nota">Todavía no hay comentarios.</p>';
+ }catch(e){$('c-lista').innerHTML='<p class="nota">Los comentarios funcionan en la versión publicada, no en el archivo abierto desde la computadora.</p>';$('c-enviar').disabled=true}}
+$('c-enviar').onclick=async()=>{const texto=$('c-texto').value.trim();if(!texto)return;$('c-estado').textContent='Enviando...';
+ try{const r=await fetch('/api/comentarios',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({texto,seccion:$('c-seccion').value})});
+  if(!r.ok)throw new Error((await r.json()).error||r.status);$('c-texto').value='';$('c-estado').textContent='Enviado.';comentarios();
+ }catch(e){$('c-estado').textContent='No se pudo enviar: '+e.message}};
+comentarios();
 </script></body></html>
 """
 
