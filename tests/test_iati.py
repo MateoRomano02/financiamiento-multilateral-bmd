@@ -102,3 +102,16 @@ def test_las_fotos_se_unen_sin_perder_las_viejas_ni_duplicar_republicadas():
     assert sorted(union.index) == ["A", "C", "D"]
     assert union.loc["C", "monto_aprobado_usd"] == 6
     assert union.loc["A", "fecha_relevamiento"] == "2026-08-21"
+
+
+def test_un_campo_que_la_foto_nueva_deja_vacio_conserva_el_valor_anterior():
+    """CAF dejo de publicar desembolsos en su archivo del 9/09; el dato de agosto no se pierde."""
+    from src.common.normalizar import acumular_fotos
+
+    vieja = pd.DataFrame([{"id_proyecto": "A", "nombre": "Ruta", "anio_aprobacion": 2016,
+                           "monto_desembolsado_usd": 80.0, "fecha_relevamiento": "2026-08-21"}])
+    nueva = pd.DataFrame([{"id_proyecto": "A", "nombre": "Ruta", "anio_aprobacion": 2016,
+                           "monto_desembolsado_usd": None, "fecha_relevamiento": "2026-09-29"}])
+    fila = acumular_fotos([vieja, nueva]).iloc[0]
+    assert fila["monto_desembolsado_usd"] == 80.0
+    assert fila["fecha_relevamiento"] == "2026-09-29"

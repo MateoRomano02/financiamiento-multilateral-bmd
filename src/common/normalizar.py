@@ -725,7 +725,11 @@ def acumular_fotos(fotos: list[pd.DataFrame]) -> pd.DataFrame:
     un prestamo de Colombia de 2020 por USD 350 millones.
     """
     union = pd.concat(fotos, ignore_index=True)
-    union = union.drop_duplicates("id_proyecto", keep="last")
+    # De cada operacion manda la foto mas nueva, campo por campo: si la nueva trae un campo vacio,
+    # queda el valor de la anterior. El archivo de CAF del 9/09 dejo de publicar casi todos los
+    # desembolsos (28 transacciones contra 467) y tomar la fila entera de la foto nueva se los
+    # borraba a 215 operaciones.
+    union = union.groupby("id_proyecto", sort=False).last().reset_index()
     clave = union["nombre"].fillna("").str.lower().str.strip() + "|" + union["anio_aprobacion"].astype(str)
     mas_nueva = union.groupby(clave)["fecha_relevamiento"].transform("max")
     republicada = (union["fecha_relevamiento"] < mas_nueva) & (clave.str.len() > 5)
