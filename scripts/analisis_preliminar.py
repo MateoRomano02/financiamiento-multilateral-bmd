@@ -376,6 +376,41 @@ def aporte_del_banco(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(filas)
 
 
+def complemento_caf(df: pd.DataFrame) -> pd.DataFrame:
+    """Lo que CAF declara haber aprobado en su informe anual y el corpus no tiene, por año y riesgo.
+
+    Decisión del 9/10 (P22): el archivo IATI de CAF trae el 27% de lo aprobado (H37), así que el
+    faltante se informa como complemento agregado, en tabla aparte, sin mezclarlo con operaciones.
+    Del lado del corpus, soberano es el Estado nacional más lo subnacional, porque CAF lo informa como
+    riesgo soberano cuando tiene garantía; el resto de los prestatarios cuenta como no soberano.
+    """
+    archivos = sorted((RAIZ / "data" / "raw" / "referencia").glob("caf_aprobaciones_informes_*.csv"))
+    if not archivos:
+        return pd.DataFrame()
+    inf = pd.read_csv(archivos[-1])
+    caf = df[df["institucion"] == "CAF"].copy()
+    caf["riesgo"] = caf["tipo_prestatario"].isin(["soberana", "subnacional"]).map({True: "sob", False: "nos"})
+    corp = caf.pivot_table(index="anio_aprobacion", columns="riesgo", values="monto_aprobado_usd",
+                           aggfunc="sum", fill_value=0) / 1e6
+    filas = []
+    for _, r in inf.iterrows():
+        a = int(r["anio"])
+        sob = corp.loc[a, "sob"] if a in corp.index else 0.0
+        nos = corp.loc[a, "nos"] if a in corp.index else 0.0
+        nos_inf = r["no_soberano_musd"] + (r["cuasi_soberano_musd"] if pd.notna(r["cuasi_soberano_musd"]) else 0)
+        filas.append({
+            "anio": a,
+            "informe_total_mm": r["total_aprobado_musd"], "informe_soberano_mm": r["soberano_musd"],
+            "informe_no_soberano_mm": nos_inf,
+            "corpus_soberano_mm": round(sob), "corpus_no_soberano_mm": round(nos),
+            "complemento_soberano_mm": round(max(0.0, r["soberano_musd"] - sob)),
+            "complemento_no_soberano_mm": round(max(0.0, nos_inf - nos)),
+            "cobertura_pct": round(100 * (sob + nos) / r["total_aprobado_musd"], 1),
+            "fuente_url": r["fuente_url"], "pagina": r["pagina"],
+        })
+    return pd.DataFrame(filas)
+
+
 def tamano_medio(df: pd.DataFrame, desde: int = 2014) -> pd.DataFrame:
     """Monto medio y mediano por operacion y anio, dentro de cada grupo y ventanilla.
 

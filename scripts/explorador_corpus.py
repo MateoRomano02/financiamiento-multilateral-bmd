@@ -38,6 +38,35 @@ COLUMNAS = ["banco_grupo", "institucion", "tipo_ventanilla", "nombre", "pais", "
             "estado", "monto_aprobado_usd", "monto_desembolsado_usd", "sector", "url_proyecto",
             "monto_constante_usd", "region", "forma_financiamiento", "moneda_original", "monto_original",
             "descripcion"]
+# Una ficha por grupo bancario, en lenguaje para cualquier lector: es lo que convierte el
+# explorador en el tablero por grupo que pide el plan de trabajo. Cada afirmación tiene su respaldo
+# en docs/hallazgos.md.
+FICHAS = {
+    "GBM": "Grupo Banco Mundial. Cuatro ventanillas: el BIRF presta a Estados de ingreso medio, la IDA a "
+           "Estados de ingreso bajo (con créditos y donaciones), la IFC a empresas y MIGA otorga garantías "
+           "de inversión. Los montos son el aporte del banco; los fondos de donantes que administra van "
+           "aparte. Publica desembolsos para el BIRF y la IDA. Sus informes anuales cierran el año en junio.",
+    "GBID": "Grupo BID. El BID presta a Estados de América Latina y el Caribe, BID Invest a empresas y BID "
+            "Lab financia innovación y cooperación técnica. Hasta 2015 el propio BID aprobaba la cartera "
+            "privada, que en 2016 pasó a BID Invest: por eso la serie de la ventanilla privada se lee desde "
+            "2016. No publica desembolsos.",
+    "CAF": "CAF, Banco de Desarrollo de América Latina y el Caribe. Presta a Estados y a empresas sin "
+           "separar ventanillas; la ventanilla se clasificó por el nombre del prestatario. Atención: su "
+           "archivo oficial trae cerca del 27% de lo que CAF declara haber aprobado en sus informes anuales "
+           "y casi nada de sus líneas de crédito a bancos. La tabla de abajo muestra el faltante por año.",
+    "NDB": "Nuevo Banco de Desarrollo de los BRICS, opera desde 2016. Declara la ventanilla de cada "
+           "operación y presta buena parte en monedas locales, convertidas a dólares con el promedio del "
+           "año. Los montos se completaron con el anexo de su informe anual 2025. No publica la forma del "
+           "financiamiento ni desembolsos.",
+    "AIIB": "Banco Asiático de Inversión en Infraestructura, opera desde 2016. Declara la ventanilla de "
+            "cada operación. Es de los más concentrados por país, con proyectos grandes. No publica la "
+            "forma del financiamiento ni desembolsos.",
+    "FONPLATA": "FONPLATA, banco de los cinco países de la Cuenca del Plata. Publica desembolsos de casi todas "
+                "sus operaciones; no separa ventanillas y en una de cada tres falta el prestatario.",
+    "BCIE": "Banco Centroamericano de Integración Económica. Publica desembolsos de tres de cada cuatro "
+            "operaciones; declara cuando el prestatario es privado.",
+}
+
 # La descripción se recorta para que la página siga siendo liviana; la entera está en el corpus.
 LARGO_DESCRIPCION = 300
 
@@ -68,13 +97,19 @@ select,input{width:100%;padding:6px;border:1px solid var(--l);border-radius:4px;
 .anios-et{display:flex;gap:4px;font-size:11px;color:var(--s)}.anios-et span{flex:1;text-align:center}
 table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid var(--l);padding:4px;text-align:left;vertical-align:top}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
-.tabla{overflow-x:auto}th[data-o]{cursor:pointer;text-decoration:underline dotted}details summary{cursor:pointer;color:var(--s)}button{padding:6px 10px;border:1px solid var(--t);background:var(--b);border-radius:4px;cursor:pointer}
+.tabla{overflow-x:auto}.tableros button{margin:0 6px 6px 0}.tableros button.on{background:var(--t);color:var(--b)}th[data-o]{cursor:pointer;text-decoration:underline dotted}details summary{cursor:pointer;color:var(--s)}button{padding:6px 10px;border:1px solid var(--t);background:var(--b);border-radius:4px;cursor:pointer}
 </style></head><body>
 <h1>Explorador del corpus de financiamiento multilateral</h1>
 __INGRESO__
 <p class="nota">Proyecto CIAI Nº 34, UNSAM. Operaciones aprobadas 2014 a 2025, sin canceladas, armonizadas desde
 las fuentes oficiales de cada banco. Descargas del __FECHA__. Montos aprobados en millones de dólares, corrientes o constantes de 2025 según el selector.
 Sectores tal como los nombra cada banco. Ojo: la IFC anota el tope entero de algunas facilidades marco en cada banco participante, así que sus montos en mercados financieros están inflados. Borrador de trabajo, no para citar.</p>
+<p id="tableros" class="tableros"></p>
+<div class="kpi" id="ficha" style="display:none;margin:8px 0"></div>
+<div id="caf-comp" style="display:none"><h2>CAF según sus informes anuales</h2>
+<p class="nota">Millones de dólares. Lo que CAF declara haber aprobado en su informe de cada año, contra lo que trae su
+archivo oficial (el corpus). El faltante se informa aparte y no se suma a las operaciones.</p>
+<div class="tabla"><table><thead><tr><th>Año</th><th class="n">Informe</th><th class="n">En el corpus</th><th class="n">Falta soberano</th><th class="n">Falta no soberano</th><th class="n">Cobertura</th></tr></thead><tbody id="t-caf"></tbody></table></div></div>
 <div class="filtros">
 <div><label>Banco</label><select id="f-grupo"></select></div>
 <div><label>Institución</label><select id="f-inst"></select></div>
@@ -178,6 +213,15 @@ function porBanco(f,total){const g={};f.forEach(r=>{(g[r[i.institucion]]=g[r[i.i
   return [k,rs.length,m,total?100*m/total:0,mediana(rs.filter(r=>r[i.monto_aprobado_usd]!==null).map(r=>monto(r)/1e6)),m?100*alc/m:0,top5,orden.length?orden[0][0]:'']})
   .sort((a,b)=>b[2]-a[2])}
 const pct=n=>n.toLocaleString('es-AR',{maximumFractionDigits:1})+'%';
+// Tablero integrado y uno por grupo bancario: cada botón fija el banco y muestra su ficha.
+$('tableros').innerHTML='<span class="nota">Tablero: </span>'+['',...unicos('banco_grupo')].map(g=>`<button data-g="${g}">${g?nom(g):'Integrado'}</button>`).join('');
+document.querySelectorAll('#tableros button').forEach(b=>b.onclick=()=>{$('f-grupo').value=b.dataset.g;$('f-grupo').dispatchEvent(new Event('input'))});
+$('t-caf').innerHTML=(P.complemento_caf||[]).map(x=>`<tr><td>${x.anio}</td><td class="n">${fmt(x.informe_total_mm)}</td><td class="n">${fmt(x.corpus_soberano_mm+x.corpus_no_soberano_mm)}</td><td class="n">${fmt(x.complemento_soberano_mm)}</td><td class="n">${fmt(x.complemento_no_soberano_mm)}</td><td class="n">${pct(x.cobertura_pct)}</td></tr>`).join('');
+function ficha(){const g=$('f-grupo').value;
+ document.querySelectorAll('#tableros button').forEach(b=>b.classList.toggle('on',b.dataset.g===g));
+ $('ficha').style.display=g&&P.fichas[g]?'block':'none';$('ficha').textContent=P.fichas[g]||'';
+ $('caf-comp').style.display=g==='CAF'&&(P.complemento_caf||[]).length?'block':'none';}
+$('f-grupo').addEventListener('input',ficha);ficha();
 const VG=[...new Set(V.map(x=>x.grupo))];
 $('t-vent-cab').innerHTML='<tr><th>Año</th>'+VG.map(g=>`<th class="n">${g}</th>`).join('')+'</tr>';
 $('t-vent').innerHTML=[...new Set(V.map(x=>x.anio))].sort().map(a=>{const v=g=>{const x=V.find(y=>y.anio===a&&y.grupo===g);return x?pct(x.pct_no_soberana):''};
@@ -251,7 +295,9 @@ def main() -> int:
     fecha = date.fromtimestamp(CORPUS.stat().st_mtime).strftime("%d/%m/%Y")
     base = PAGINA.replace("__FECHA__", fecha)
     paquete = json.dumps({"columnas": COLUMNAS, "datos": df.values.tolist(), "ventanillas": ventanillas,
-                          "fuentes": fuentes}, ensure_ascii=False)
+                          "fuentes": fuentes, "fichas": FICHAS,
+                          "complemento_caf": ap.complemento_caf(ap.cargar()).drop(columns=["fuente_url"], errors="ignore")
+                          .to_dict(orient="records")}, ensure_ascii=False, default=float)
 
     local = (base.replace("__INGRESO__", "").replace("__CARGADOR__", "")
              .replace("__ARRANQUE__", f"iniciar({paquete},null);"))

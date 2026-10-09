@@ -29,6 +29,7 @@ import pandas as pd  # noqa: E402
 from scripts.analisis_preliminar import (  # noqa: E402
     PROCESADO,
     cargar,
+    complemento_caf,
     composicion,
     concentracion,
     moneda_local,
@@ -87,6 +88,7 @@ def main() -> int:
         "por_pais.csv": por_pais(df),
         "por_sector.csv": composicion(df),
         "indicadores.csv": indicadores(df),
+        "complemento_caf.csv": complemento_caf(df),
     }
     for nombre, tabla in tablas.items():
         tabla.to_csv(DESTINO / nombre, index=False)
