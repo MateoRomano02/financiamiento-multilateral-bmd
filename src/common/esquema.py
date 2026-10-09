@@ -69,17 +69,22 @@ VARIABLES: dict[str, tuple[str, str]] = {
     "monto_original": ("Montos", "Monto en su moneda original, antes de convertir a dólares."),
     "costo_total_proyecto_usd": ("Montos",
         "Costo total del proyecto, que incluye el aporte del banco más el de otras fuentes y la "
-        "contraparte local. Permite medir qué proporción del proyecto financia el banco."),
+        "contraparte local. Permite medir qué proporción del proyecto financia el banco. Lo traen "
+        "el BID y BID Lab (campo estructurado), el Banco Mundial (BIRF e IDA, campo lendprojectcost, "
+        "anotado en una sola fila por proyecto aunque tenga fila BIRF e IDA) y el NDB (en prosa, "
+        "en una minoría de fichas). IFC, MIGA, BID Invest, CAF, FONPLATA, BCIE y AIIB no lo publican."),
     "aporte_terceros_usd": ("Montos",
-        "Fondos de terceros que el banco administra dentro de la operación, sobre todo donaciones de "
-        "fondos fiduciarios de donantes. Solo el Banco Mundial lo publica (campo grantamt). No forma "
-        "parte del monto aprobado y se anota en una sola fila por proyecto."),
+        "Fondos de otros aportantes que acompañan la operación, aparte del monto aprobado por el "
+        "banco. Banco Mundial: donaciones de fondos fiduciarios y donantes que el banco administra "
+        "(campo grantamt), en una sola fila por proyecto. NDB: lo que ponen otras fuentes según la "
+        "tabla de aportantes de la ficha, convertido a dólares. El resto de las instituciones no lo "
+        "publican; el BID publica el costo total pero no discrimina quién pone la diferencia."),
     "instrumento": ("Clasificación del banco",
         "Tipo de operación según el banco: préstamo, garantía, inversión de capital, cooperación técnica."),
     "forma_financiamiento": ("Clasificación del banco",
         "Forma del financiamiento con el criterio de la dirección: prestamo, donacion, garantia u otro "
         "(capital accionario, bonos, gestión de riesgo), y mixto si la operación combina más de una "
-        "sin separar el monto. Sale del campo de cada fuente; en FONPLATA y BCIE la fuente declara "
+        "sin separar el monto. Sale del campo de cada fuente, o de un cruce con otra base cuando la fuente no lo trae (BIRF e IDA con el estado de préstamos, BID Invest con la ficha del BID que cita); en FONPLATA y BCIE la fuente declara "
         "préstamo para todas sus operaciones, y en el AIIB y el NDB queda vacía porque no la publican."),
     "sector": ("Clasificación del banco",
         "Sector tal como lo clasifica el banco. Cada institución usa su propio catálogo, así que no "

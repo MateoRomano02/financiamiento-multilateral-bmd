@@ -270,9 +270,10 @@ def prestamos_banco_mundial() -> pd.DataFrame:
         else:
             prefijo = d["credit_number"].str.extract(r"^([A-Z]+)", expand=False)
             d["forma"] = prefijo.map(lambda p: FORMA_PREFIJO_IDA.get(p, "prestamo"))
-        partes.append(d[["project_id", "ventanilla", "fecha_prestamo", "original", "desembolsado", "forma"]])
+        partes.append(d[["project_id", "ventanilla", "fecha_prestamo", "original", "desembolsado", "forma", "country"]])
     if not partes:
-        return pd.DataFrame(columns=["project_id", "ventanilla", "fecha_prestamo", "original", "desembolsado", "forma"])
+        return pd.DataFrame(columns=["project_id", "ventanilla", "fecha_prestamo", "original", "desembolsado", "forma",
+                                     "country"])
     return pd.concat(partes, ignore_index=True)
 
 
@@ -306,7 +307,43 @@ def _desembolsos_banco_mundial(df: pd.DataFrame) -> pd.DataFrame:
     # operación de la IDA que combina crédito y donación queda como mixta.
     formas = unidos.groupby("index")["forma"].agg(lambda f: f.iloc[0] if f.nunique() == 1 else "mixto")
     df.loc[formas.index, "forma_financiamiento"] = formas
+    return _forma_por_pais_fecha_monto(df)
+
+
+DIAS_TOLERANCIA_FORMA = 30
+MONTO_TOLERANCIA_FORMA = 0.05
+
+
+def _forma_por_pais_fecha_monto(df: pd.DataFrame) -> pd.DataFrame:
+    """Segundo cruce, solo para la forma: las operaciones que no se unieron por proyecto.
+
+    Casi todas son financiamientos adicionales cuyo préstamo quedó registrado bajo otro proyecto.
+    Se las une con un préstamo de la misma ventanilla, el mismo país, aprobado a menos de 30 días
+    y con monto dentro del 5% (nivel B de la investigación). Se asigna solo si todos los
+    candidatos coinciden en la forma; si dos candidatos distintos compiten, la fila queda sin
+    clasificar. No toca desembolsos: sin el proyecto, atribuir el desembolso sería adivinar.
+    """
+    prestamos = prestamos_banco_mundial()
+    if "country" not in prestamos.columns:
+        return df
+    sin_forma = df[df["forma_financiamiento"].isna()]
+    if sin_forma.empty:
+        return df
+    base = sin_forma[["institucion", "pais", "fecha_aprobacion", "monto_aprobado_usd"]].reset_index()
+    base["fecha"] = pd.to_datetime(base["fecha_aprobacion"], errors="coerce")
+    base["clave_pais"] = base["pais"].map(_clave_pais)
+    pr = prestamos.assign(clave_pais=prestamos["country"].map(_clave_pais))
+    unidos = base.merge(pr, left_on=["institucion", "clave_pais"], right_on=["ventanilla", "clave_pais"])
+    cerca = (unidos["fecha_prestamo"] - unidos["fecha"]).dt.days.abs() <= DIAS_TOLERANCIA_FORMA
+    mismo_monto = (unidos["original"] / unidos["monto_aprobado_usd"] - 1).abs() <= MONTO_TOLERANCIA_FORMA
+    unidos = unidos[cerca & mismo_monto]
+    unicas = unidos.groupby("index")["forma"].agg(lambda f: f.iloc[0] if f.nunique() == 1 else None).dropna()
+    df.loc[unicas.index, "forma_financiamiento"] = unicas
     return df
+
+
+def _clave_pais(valor: object) -> str:
+    return re.sub(r"[^a-z]", "", str(valor).lower())
 
 
 # Forma del financiamiento, criterio de la dirección del 8/10: préstamo, donación, garantía u otro
@@ -340,6 +377,27 @@ def _forma_bid_invest(valor: str | None) -> str | None:
     if v == "Guarantee":
         return "garantia"
     return "otro"  # capital, fondos y bonos
+
+
+@lru_cache(maxsize=1)
+def formas_bid_por_operacion() -> dict[str, str | None]:
+    """Forma de financiamiento de cada operación del csv del BID, por número de operación."""
+    with ultima_descarga("gbid/bid_proyectos_*.csv").open(encoding="utf-8-sig") as f:
+        return {(r.get("oper_num") or "").strip(): _forma_bid(r) for r in csv.DictReader(f)}
+
+
+def _forma_por_ficha_bid(descripcion: str | None) -> str | None:
+    """Forma de una operación de BID Invest sin instrumento, por la ficha del BID que cita.
+
+    Las operaciones que el BID traspasó a BID Invest en 2016 remiten en su descripción a la ficha
+    original (iadb.org/en/project/XX-L1234). El enlace está en el HTML escapado, que la limpieza
+    de texto descarta, así que se busca en la descripción cruda. Si cita varias fichas con
+    formas distintas, no se asigna.
+    """
+    texto = html.unescape(html.unescape(descripcion or ""))
+    fichas = set(re.findall(r"iadb\.org/[a-z]{2}/project/([A-Z]{2}-[A-Z]\d+)", texto))
+    formas = {formas_bid_por_operacion().get(f) for f in fichas} - {None}
+    return formas.pop() if len(formas) == 1 else None
 
 
 def _limpiar_texto(valor: object) -> str | None:
@@ -381,6 +439,10 @@ def normalizar_gbm(ruta: Path, relevamiento: str) -> pd.DataFrame:
         # del aporte del banco, por criterio de la dirección del 8/10. Se anotan en una sola de las
         # filas del proyecto para que sumar la columna no los cuente dos veces.
         terceros = a_numero(r.get("grantamt")) or None
+        # El costo total del proyecto (lendprojectcost) se anota igual en una sola fila: el
+        # proyecto tiene un solo costo y sumarlo en las dos ventanillas lo duplicaría. Criterio
+        # en docs/criterios-codificacion.md (8/10); aporte_del_banco suma BIRF más IDA por proyecto.
+        costo = a_numero(r.get("lendprojectcost")) or None
         for institucion, campo in (("BIRF", "curr_ibrd_commitment"), ("IDA", "idacommamt")):
             monto = a_numero(r.get(campo))
             if not monto:
@@ -388,9 +450,10 @@ def normalizar_gbm(ruta: Path, relevamiento: str) -> pd.DataFrame:
             filas.append(
                 {**_fila_base(institucion, "GBM", url, relevamiento), **comunes,
                  "id_proyecto": f"{r.get('id')}", "monto_aprobado_usd": monto,
-                 "aporte_terceros_usd": terceros}
+                 "aporte_terceros_usd": terceros, "costo_total_proyecto_usd": costo}
             )
             terceros = None
+            costo = None
     return _desembolsos_banco_mundial(_cerrar(filas))
 
 
@@ -524,7 +587,8 @@ def normalizar_bid_invest(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "monto_original": a_numero(r.get("iic_financing_amount")),
              "moneda_original": (r.get("currency") or "").strip() or None,
              "instrumento": (r.get("Investment_instrument") or "").replace("&amp;", "y") or None,
-             "forma_financiamiento": _forma_bid_invest(r.get("Investment_instrument")),
+             "forma_financiamiento": (_forma_bid_invest(r.get("Investment_instrument"))
+                                      or _forma_por_ficha_bid(r.get("description"))),
              "descripcion": _limpiar_texto(r.get("description")),
              "sector": (r.get("sector") or "").strip() or None}
         )
@@ -820,6 +884,10 @@ def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
         costo, moneda_costo = monto_desde_texto(ficha.get("costo_total"))
         costo_usd = a_dolares(costo, normalizar_moneda(moneda_costo), anio)
 
+        # Lo que ponen otras fuentes junto al NDB, que la ficha publica en su tabla de aportantes.
+        otras, moneda_otras = monto_desde_texto(ficha.get("monto_otras_fuentes"))
+        otras_usd = a_dolares(otras, normalizar_moneda(moneda_otras), anio)
+
         filas.append(
             {**_fila_base("NDB", "NDB", url, relevamiento),
              "tipo_ventanilla": "soberana" if tipo == "Sovereign" else "no_soberana",
@@ -835,6 +903,7 @@ def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "monto_original": monto,
              "moneda_original": moneda,
              "costo_total_proyecto_usd": costo_usd,
+             "aporte_terceros_usd": otras_usd,
              "instrumento": tipo,
              "sector": campo(r'class="project-card-cat text-small-bold">(.*?)</div>', b)}
         )

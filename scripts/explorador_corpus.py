@@ -24,6 +24,15 @@ import analisis_preliminar as ap  # noqa: E402  mismas reglas que el informe
 RAIZ = Path(__file__).resolve().parent.parent
 CORPUS = RAIZ / "data" / "processed" / "corpus_2014_2025.csv"
 SALIDA = RAIZ / "data" / "processed" / "explorador" / "explorador-corpus.html"
+# Version publicada: la misma pagina sin los datos adentro. Los datos y los comentarios se leen de
+# Firestore despues de que la persona entra con el link que le llega por mail (web/publicar.py).
+SALIDA_WEB = RAIZ / "data" / "processed" / "explorador" / "publicado" / "index.html"
+# La versión publicada solo se arma donde está la carpeta web/ (el repositorio privado); en el
+# público se genera solo el archivo local, que se abre con doble clic.
+WEB = RAIZ / "web"
+PUBLICABLE = (WEB / "cargador.js").exists()
+INGRESO = (WEB / "ingreso.html").read_text(encoding="utf-8") if PUBLICABLE else ""
+CARGADOR = (WEB / "cargador.js").read_text(encoding="utf-8") if PUBLICABLE else ""
 
 COLUMNAS = ["banco_grupo", "institucion", "tipo_ventanilla", "nombre", "pais", "anio_aprobacion",
             "estado", "monto_aprobado_usd", "monto_desembolsado_usd", "sector", "url_proyecto",
@@ -54,12 +63,15 @@ select,input{width:100%;padding:6px;border:1px solid var(--l);border-radius:4px;
 .barras .n{text-align:right;font-variant-numeric:tabular-nums}
 .anios{display:flex;align-items:flex-end;gap:4px;height:160px;border-bottom:1px solid var(--l)}
 .anios div{flex:1;background:var(--a);position:relative}
+#g-forma div{background:none;display:flex;flex-direction:column-reverse}#g-forma span{display:block}
+.leyenda{font-size:12px;color:var(--s);margin:4px 0}.leyenda i{display:inline-block;width:10px;height:10px;margin:0 4px 0 10px;vertical-align:middle}
 .anios-et{display:flex;gap:4px;font-size:11px;color:var(--s)}.anios-et span{flex:1;text-align:center}
 table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid var(--l);padding:4px;text-align:left;vertical-align:top}
 td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .tabla{overflow-x:auto}th[data-o]{cursor:pointer;text-decoration:underline dotted}details summary{cursor:pointer;color:var(--s)}button{padding:6px 10px;border:1px solid var(--t);background:var(--b);border-radius:4px;cursor:pointer}
 </style></head><body>
 <h1>Explorador del corpus de financiamiento multilateral</h1>
+__INGRESO__
 <p class="nota">Proyecto CIAI Nº 34, UNSAM. Operaciones aprobadas 2014 a 2025, sin canceladas, armonizadas desde
 las fuentes oficiales de cada banco. Descargas del __FECHA__. Montos aprobados en millones de dólares, corrientes o constantes de 2025 según el selector.
 Sectores tal como los nombra cada banco. Ojo: la IFC anota el tope entero de algunas facilidades marco en cada banco participante, así que sus montos en mercados financieros están inflados. Borrador de trabajo, no para citar.</p>
@@ -81,6 +93,10 @@ Sectores tal como los nombra cada banco. Ojo: la IFC anota el tope entero de alg
 <div class="kpi"><span class="nota">Países</span><b id="k-pais"></b></div>
 </div>
 <h2>Monto aprobado por año</h2><div class="anios" id="g-anios"></div><div class="anios-et" id="g-anios-et"></div>
+<h2>Por forma del financiamiento</h2>
+<p class="nota">Con los filtros elegidos. Préstamo, donación, garantía u otro (capital, bonos, gestión de riesgo), según el
+campo de cada fuente; mixta si la operación combina más de una. El AIIB y el NDB no publican la forma.</p>
+<div class="leyenda" id="g-forma-ley"></div><div class="anios" id="g-forma"></div><div class="anios-et" id="g-forma-et"></div>
 <h2>Comparación entre bancos</h2>
 <p class="nota">Con los filtros elegidos. Cinco principales: porción del monto que se llevan los cinco países que más
 reciben, sin contar los agregados sin país. A ALC: incluye los agregados regionales de la región.</p>
@@ -94,9 +110,13 @@ los topes de facilidad repetidos de la IFC); en el AIIB y el NDB la declara la f
 BCIE y FONPLATA no la publican y se están clasificando por el prestatario. No cambia con los filtros. En 2014 y 2015
 la cartera privada del BID figura como soberana (ver informe v3, sección 2).</p>
 <div class="tabla"><table><thead id="t-vent-cab"></thead><tbody id="t-vent"></tbody></table></div>
+<h2>Fuentes y fecha de descarga</h2>
+<p class="nota">De dónde sale cada institución y cuándo se bajó por última vez. El corpus se actualiza solo una vez
+por semana.</p>
+<div class="tabla"><table><thead><tr><th>Institución</th><th class="n">Operaciones</th><th>Descargado</th><th>Fuente</th></tr></thead><tbody id="t-fuentes"></tbody></table></div>
 <h2>Comentarios del equipo</h2>
-<p class="nota">Análisis que les gustaría ver, dudas sobre una cifra, ideas de visualización. Quedan firmados con el
-mail con el que entraron y los lee todo el equipo.</p>
+<p class="nota">Análisis que les gustaría ver, dudas sobre una cifra, ideas de visualización. Se firman con el nombre
+que escriban y los lee todo el equipo.</p>
 <div class="filtros"><div><label>Sobre</label><select id="c-seccion">
 <option>General</option><option>Explorador</option><option>Comparación entre bancos</option><option>Ventanillas</option>
 <option>Países y sectores</option><option>Algo que me gustaría ver</option></select></div></div>
@@ -104,13 +124,20 @@ mail con el que entraron y los lee todo el equipo.</p>
 <p><button id="c-enviar">Enviar comentario</button> <span class="nota" id="c-estado"></span></p>
 <div id="c-lista"></div>
 <h2>Diez principales países</h2><div class="barras" id="g-paises"></div>
-<h2>Diez principales sectores</h2><div class="barras" id="g-sectores"></div>
+<h2>Diez principales sectores</h2>
+<p class="nota" id="g-sectores-nota">Cada banco clasifica los sectores con su propio catálogo, así que no son comparables entre
+bancos: elegí una institución para verlos. Al Banco Mundial se le saca el prefijo del año de su taxonomía (FY17).</p>
+<div class="barras" id="g-sectores"></div>
 <h2>Operaciones <span class="nota" id="t-nota"></span></h2>
-<p><button id="b-csv">Descargar las filtradas como CSV</button></p>
+<p><button id="b-csv">Descargar las filtradas como CSV</button> <span class="nota">El CSV trae todas las operaciones que
+cumplen los filtros, no solo las 300 que se muestran abajo, con todas sus columnas.</span></p>
 <p class="nota">Clic en el encabezado de una columna para ordenar; otro clic invierte el orden. Clic en la descripción para verla entera.</p>
 <div class="tabla"><table><thead><tr><th data-o="anio_aprobacion">Año</th><th data-o="institucion">Institución</th><th data-o="nombre">Operación</th><th data-o="pais">País</th><th data-o="sector">Sector</th><th data-o="forma_financiamiento">Forma</th><th data-o="tipo_ventanilla">Ventanilla</th><th class="n" data-o="monto">USD M</th><th class="n" data-o="monto_desembolsado_usd">Desembolsado USD M</th><th>Moneda original</th><th>Descripción</th></tr></thead><tbody id="t-cuerpo"></tbody></table></div>
-<script>
-const C=__COLUMNAS__, D=__DATOS__, V=__VENTANILLAS__;
+<script>__CARGADOR__
+// P trae las columnas junto con los datos: así la página nunca interpreta datos nuevos con un orden
+// de columnas viejo, aunque la página y los datos se publiquen en momentos distintos.
+function iniciar(P,COM){
+const C=P.columnas,D=P.datos,V=P.ventanillas,F=P.fuentes;
 const i=Object.fromEntries(C.map((c,k)=>[c,k]));
 const fmt=n=>n.toLocaleString('es-AR',{maximumFractionDigits:0});
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -119,7 +146,13 @@ function opciones(sel,valores,todas){sel.innerHTML=(todas?'<option value="">'+to
 const unicos=c=>[...new Set(D.map(r=>r[i[c]]).filter(v=>v!==null&&v!==''))].sort();
 const NOMBRE={GBM:'Grupo Banco Mundial',GBID:'Grupo BID'};const nom=g=>NOMBRE[g]||g;
 $('f-grupo').innerHTML='<option value="">Todos</option>'+unicos('banco_grupo').map(v=>`<option value="${v}">${nom(v)}</option>`).join('');
-opciones($('f-forma'),unicos('forma_financiamiento'),'Todas');opciones($('f-inst'),unicos('institucion'),'Todas');
+opciones($('f-forma'),unicos('forma_financiamiento'),'Todas');
+// Los enlaces de MIGA no se muestran: el campo que publica lleva a otra página (H39).
+// La institución depende del banco elegido, para que no se pueda pedir una combinación imposible.
+function instituciones(){const g=$('f-grupo').value,actual=$('f-inst').value;
+ const vs=[...new Set(D.filter(r=>!g||r[i.banco_grupo]===g).map(r=>r[i.institucion]))].sort();
+ opciones($('f-inst'),vs,'Todas');$('f-inst').value=vs.includes(actual)?actual:'';}
+instituciones();$('f-grupo').addEventListener('input',instituciones);
 opciones($('f-vent'),['soberana','no_soberana','sin asignar'],'Todas');
 const anios=unicos('anio_aprobacion');opciones($('f-desde'),anios);opciones($('f-hasta'),anios);
 $('f-hasta').value=anios[anios.length-1];
@@ -156,6 +189,9 @@ document.querySelectorAll('th[data-o]').forEach(th=>th.onclick=()=>{const c=th.d
 function comparar(a,b){const x=valor(a,ORDEN.c),y=valor(b,ORDEN.c);
  if(x===null||x===undefined||x==='')return 1;if(y===null||y===undefined||y==='')return -1;
  return (typeof x==='number'&&typeof y==='number'?x-y:String(x).localeCompare(String(y),'es'))*ORDEN.dir;}
+const FORMAS=[['prestamo','#111'],['donacion','#777'],['garantia','#aaa'],['otro','#ccc'],['mixto','#555'],['sin dato','#e6e6e6']];
+$('g-forma-ley').innerHTML=FORMAS.map(([k,c])=>`<i style="background:${c}"></i>${k}`).join('');
+$('t-fuentes').innerHTML=F.map(x=>`<tr><td>${x.institucion}</td><td class="n">${fmt(x.operaciones)}</td><td>${x.descargado}</td><td><a href="${x.fuente}" target="_blank" rel="noopener">${esc(x.fuente)}</a></td></tr>`).join('');
 function dibujar(){
  const f=filtradas();const total=f.reduce((a,r)=>a+monto(r),0)/1e6;
  $('k-monto-et').textContent=$('f-usd').value==='k'?'Aprobado, USD M de 2025':'Aprobado, USD M';
@@ -166,27 +202,34 @@ function dibujar(){
  const pa=sumar(f,'anio_aprobacion'),ks=anios.filter(a=>a>=+$('f-desde').value&&a<=+$('f-hasta').value),m=Math.max(1,...ks.map(a=>pa[a]||0));
  $('g-anios').innerHTML=ks.map(a=>`<div title="${a}: ${fmt(pa[a]||0)}" style="height:${100*(pa[a]||0)/m}%"></div>`).join('');
  $('g-anios-et').innerHTML=ks.map(a=>`<span>${String(a).slice(2)}</span>`).join('');
+ const pf={};f.forEach(r=>{const a=r[i.anio_aprobacion],k=r[i.forma_financiamiento]||'sin dato';(pf[a]=pf[a]||{})[k]=(pf[a][k]||0)+monto(r)});
+ const mf=Math.max(1,...ks.map(a=>Object.values(pf[a]||{}).reduce((x,y)=>x+y,0)));
+ $('g-forma').innerHTML=ks.map(a=>`<div style="height:100%">${FORMAS.map(([k,c])=>{const v=(pf[a]||{})[k]||0;return v?`<span title="${a}, ${k}: ${fmt(v/1e6)} M" style="height:${100*v/mf}%;background:${c}"></span>`:''}).join('')}</div>`).join('');
+ $('g-forma-et').innerHTML=$('g-anios-et').innerHTML;
  const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,10);
- barras($('g-paises'),top(sumar(f,'pais')));barras($('g-sectores'),top(sumar(f,'sector')));
+ barras($('g-paises'),top(sumar(f,'pais')));const unaInst=$('f-inst').value||new Set(f.map(r=>r[i.institucion])).size===1;
+ const sinFY=o=>{const r={};Object.entries(o).forEach(([k,v])=>{const c=k.replace(/^FY\\d{2} - /,'');r[c]=(r[c]||0)+v});return r};
+ if(unaInst)barras($('g-sectores'),top(sinFY(sumar(f,'sector'))));else $('g-sectores').innerHTML='';
  const orden=[...f].sort(comparar).slice(0,300);
  $('t-nota').textContent=f.length>300?`(las primeras 300 de ${fmt(f.length)} según el orden elegido)`:'';
  const mo=r=>r[i.moneda_original]&&r[i.moneda_original]!=='USD'?`${r[i.moneda_original]} ${fmt((r[i.monto_original]||0)/1e6)} M`:'';
  const de=r=>{const t=r[i.descripcion];if(!t)return '';const e=esc(t);return t.length>140?`<details><summary>${esc(t.slice(0,140))}...</summary>${e}</details>`:e};
- $('t-cuerpo').innerHTML=orden.map(r=>`<tr><td>${r[i.anio_aprobacion]}</td><td>${r[i.institucion]}</td><td>${r[i.url_proyecto]?`<a href="${r[i.url_proyecto]}" target="_blank" rel="noopener">${r[i.nombre]||'(sin nombre)'}</a>`:(r[i.nombre]||'')}</td><td>${r[i.pais]||''}</td><td>${r[i.sector]||''}</td><td>${r[i.forma_financiamiento]||''}</td><td>${(r[i.tipo_ventanilla]||'').replace('_',' ')}</td><td class="n">${r[i.monto_aprobado_usd]===null?'sin dato':fmt(monto(r)/1e6)}</td><td class="n">${r[i.monto_desembolsado_usd]===null?'':fmt(r[i.monto_desembolsado_usd]/1e6)}</td><td>${mo(r)}</td><td>${de(r)}</td></tr>`).join('');
+ $('t-cuerpo').innerHTML=orden.map(r=>`<tr><td>${r[i.anio_aprobacion]}</td><td>${r[i.institucion]}</td><td>${r[i.url_proyecto]&&r[i.institucion]!=='MIGA'?`<a href="${r[i.url_proyecto]}" target="_blank" rel="noopener">${r[i.nombre]||'(sin nombre)'}</a>`:(r[i.nombre]||'')}</td><td>${r[i.pais]||''}</td><td>${r[i.sector]||''}</td><td>${r[i.forma_financiamiento]||''}</td><td>${(r[i.tipo_ventanilla]||'').replace('_',' ')}</td><td class="n">${r[i.monto_aprobado_usd]===null?'sin dato':fmt(monto(r)/1e6)}</td><td class="n">${r[i.monto_desembolsado_usd]===null?'':fmt(r[i.monto_desembolsado_usd]/1e6)}</td><td>${mo(r)}</td><td>${de(r)}</td></tr>`).join('');
 }
 $('b-csv').onclick=()=>{const q=v=>v===null?'':'"'+String(v).replace(/"/g,'""')+'"';
  const csv=[C.join(',')].concat(filtradas().map(r=>r.map(q).join(','))).join('\\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='corpus-filtrado.csv';a.click();};
 document.querySelectorAll('.filtros select,.filtros input').forEach(e=>{if(e.id!=='c-seccion')e.addEventListener('input',dibujar)});dibujar();
 async function comentarios(){
- try{const r=await fetch('/api/comentarios');if(!r.ok)throw 0;const cs=await r.json();
+ try{if(!COM)throw 0;const cs=await COM.listar();
   $('c-lista').innerHTML=cs.length?cs.map(c=>`<div class="kpi" style="margin:6px 0"><span class="nota">${esc(c.autor)} · ${esc(c.seccion)} · ${esc(c.creado)} UTC</span><p style="margin:4px 0 0;white-space:pre-wrap">${esc(c.texto)}</p></div>`).join(''):'<p class="nota">Todavía no hay comentarios.</p>';
- }catch(e){$('c-lista').innerHTML='<p class="nota">Los comentarios funcionan en la versión publicada, no en el archivo abierto desde la computadora.</p>';$('c-enviar').disabled=true}}
+ }catch(e){$('c-lista').innerHTML=COM?'<p class="nota">No se pudieron leer los comentarios.</p>':'<p class="nota">Los comentarios funcionan en la versión publicada, no en el archivo abierto desde la computadora.</p>';if(!COM)$('c-enviar').disabled=true}}
 $('c-enviar').onclick=async()=>{const texto=$('c-texto').value.trim();if(!texto)return;$('c-estado').textContent='Enviando...';
- try{const r=await fetch('/api/comentarios',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({texto,seccion:$('c-seccion').value})});
-  if(!r.ok)throw new Error((await r.json()).error||r.status);$('c-texto').value='';$('c-estado').textContent='Enviado.';comentarios();
+ try{await COM.enviar($('c-seccion').value,texto);$('c-texto').value='';$('c-estado').textContent='Enviado.';comentarios();
  }catch(e){$('c-estado').textContent='No se pudo enviar: '+e.message}};
 comentarios();
+}
+__ARRANQUE__
 </script></body></html>
 """
 
@@ -198,19 +241,31 @@ def main() -> int:
     df["region"] = df["pais"].apply(ap.region_de).map(REGION)
     df.loc[~df["pais"].apply(ap.es_pais_real) & df["region"].isna(), "region"] = "G"
     ventanillas = ap.ventanillas(df).to_dict(orient="records")
+    fuentes = [{"institucion": inst, "operaciones": int(len(g)), "descargado": str(g["fecha_relevamiento"].max()),
+                "fuente": str(g["fuente_url"].mode().iloc[0])} for inst, g in df.groupby("institucion")]
     df = df[COLUMNAS].copy()
     df["descripcion"] = df["descripcion"].str.slice(0, LARGO_DESCRIPCION)
     df["anio_aprobacion"] = df["anio_aprobacion"].astype(int)
     df["monto_constante_usd"] = df["monto_constante_usd"].round(0)
     df = df.astype(object).where(df.notna(), None)
     fecha = date.fromtimestamp(CORPUS.stat().st_mtime).strftime("%d/%m/%Y")
-    html = (PAGINA.replace("__FECHA__", fecha)
-            .replace("__COLUMNAS__", json.dumps(COLUMNAS))
-            .replace("__VENTANILLAS__", json.dumps(ventanillas, ensure_ascii=False))
-            .replace("__DATOS__", json.dumps(df.values.tolist(), ensure_ascii=False)))
+    base = PAGINA.replace("__FECHA__", fecha)
+    paquete = json.dumps({"columnas": COLUMNAS, "datos": df.values.tolist(), "ventanillas": ventanillas,
+                          "fuentes": fuentes}, ensure_ascii=False)
+
+    local = (base.replace("__INGRESO__", "").replace("__CARGADOR__", "")
+             .replace("__ARRANQUE__", f"iniciar({paquete},null);"))
     SALIDA.parent.mkdir(parents=True, exist_ok=True)
-    SALIDA.write_text(html, encoding="utf-8")
-    print(f"Escrito {SALIDA.relative_to(RAIZ)}: {len(df):,} operaciones, {len(html) / 1e6:.1f} MB")
+    SALIDA.write_text(local, encoding="utf-8")
+    print(f"Escrito {SALIDA.relative_to(RAIZ)}: {len(df):,} operaciones, {len(local) / 1e6:.1f} MB")
+
+    if not PUBLICABLE:
+        return 0
+    web = (base.replace("__INGRESO__", INGRESO).replace("<script>__CARGADOR__", "</div><script type=\"module\">" + CARGADOR)
+           .replace("__ARRANQUE__", ""))
+    SALIDA_WEB.parent.mkdir(parents=True, exist_ok=True)
+    SALIDA_WEB.write_text(web, encoding="utf-8")
+    (SALIDA_WEB.parent / "datos.json").write_text(paquete, encoding="utf-8")
     return 0
 
 

@@ -218,8 +218,10 @@ MIEMBROS = {
     "MIGA": (182, "https://www.miga.org/about-us", True),
     "BID": (48, "sin fuente accesible, el sitio rechaza pedidos automatizados", False),
     "BID Invest": (48, "https://www.idbinvest.org/en/about-us", True),
-    "CAF": (23, "https://www.caf.com/media/4677283/2506-caf-presentacion-de-inversionistas.pdf", True),
-    "AIIB": (105, "https://www.aiib.org/en/treasury/", True),  # miembros ratificados, no aprobados
+    # Corregidos el 8/10/2026 con la serie de membrecía (research/membrecia-anio-por-anio.md):
+    # CAF suma Antigua y Barbuda y Granada en 2025, y el AIIB tiene 106 ratificados más 5 prospectivos.
+    "CAF": (24, "https://www.caf.com/media/4681103/caf-investor-presentation-2602.pdf", True),
+    "AIIB": (106, "https://www.aiib.org/en/about-aiib/governance/members-of-bank/index.html", True),  # ratificados
     "NDB": (10, "https://www.ndb.int/about-ndb/members/", True),
 }
 
@@ -349,8 +351,15 @@ def aporte_del_banco(df: pd.DataFrame) -> pd.DataFrame:
     de la direccion el 22/09 para el costo de contraparte. Solo lo permiten el BID, que publica el
     costo total como campo, y el NDB, que lo trae en prosa en 37 de sus 170 fichas.
     """
-    d = df[df["costo_total_proyecto_usd"].notna() & df["monto_aprobado_usd"].notna()]
+    d = df[df["costo_total_proyecto_usd"].notna() & df["monto_aprobado_usd"].notna()].copy()
     d = d[d["costo_total_proyecto_usd"] > 0]
+    # El Banco Mundial anota el costo total en una sola fila por proyecto, pero un proyecto puede
+    # tener fila BIRF y fila IDA. El aporte del banco es entonces la suma de las dos ventanillas,
+    # y se atribuye a la institucion de la fila que lleva el costo.
+    gbm = df[df["institucion"].isin(["BIRF", "IDA"]) & df["monto_aprobado_usd"].notna()]
+    del_proyecto = gbm.groupby("id_proyecto")["monto_aprobado_usd"].sum()
+    es_gbm = d["institucion"].isin(["BIRF", "IDA"])
+    d.loc[es_gbm, "monto_aprobado_usd"] = d.loc[es_gbm, "id_proyecto"].map(del_proyecto)
     filas = []
     for institucion, tramo in d.groupby("institucion"):
         proporcion = tramo["monto_aprobado_usd"] / tramo["costo_total_proyecto_usd"]
