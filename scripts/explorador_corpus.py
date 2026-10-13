@@ -227,7 +227,6 @@ const unicos=c=>[...new Set(D.map(r=>r[i[c]]).filter(v=>v!==null&&v!==''))].sort
 const NOMBRE={GBM:'Grupo Banco Mundial',GBID:'Grupo BID'};const nom=g=>NOMBRE[g]||g;
 $('f-grupo').innerHTML='<option value="">Todos</option>'+unicos('banco_grupo').map(v=>`<option value="${v}">${nom(v)}</option>`).join('');
 opciones($('f-forma'),unicos('forma_financiamiento'),'Todas');
-// Los enlaces de MIGA no se muestran: el campo que publica lleva a otra página (H39).
 // La institución depende del banco elegido, para que no se pueda pedir una combinación imposible.
 function instituciones(){const g=$('f-grupo').value,actual=$('f-inst').value;
  const vs=[...new Set(D.filter(r=>!g||r[i.banco_grupo]===g).map(r=>r[i.institucion]))].sort();
@@ -308,7 +307,7 @@ function dibujar(){
  $('t-nota').textContent=f.length>300?`(las primeras 300 de ${fmt(f.length)} según el orden elegido)`:'';
  const mo=r=>r[i.moneda_original]&&r[i.moneda_original]!=='USD'?`${r[i.moneda_original]} ${fmt((r[i.monto_original]||0)/1e6)} M`:'';
  const de=r=>{const t=r[i.descripcion];if(!t)return '';const e=esc(t);return t.length>140?`<details><summary>${esc(t.slice(0,140))}...</summary>${e}</details>`:e};
- $('t-cuerpo').innerHTML=orden.map(r=>`<tr><td>${r[i.anio_aprobacion]}</td><td>${r[i.institucion]}</td><td>${r[i.url_proyecto]&&r[i.institucion]!=='MIGA'?`<a href="${r[i.url_proyecto]}" target="_blank" rel="noopener">${r[i.nombre]||'(sin nombre)'}</a>`:(r[i.nombre]||'')}</td><td>${r[i.pais]||''}</td><td>${r[i.sector]||''}</td><td>${r[i.forma_financiamiento]||''}</td><td>${(r[i.tipo_ventanilla]||'').replace('_',' ')}</td><td class="n">${r[i.monto_aprobado_usd]===null?'sin dato':fmt(monto(r)/1e6)}</td><td class="n">${r[i.monto_desembolsado_usd]===null?'':fmt(r[i.monto_desembolsado_usd]/1e6)}</td><td>${mo(r)}</td><td>${de(r)}</td></tr>`).join('');
+ $('t-cuerpo').innerHTML=orden.map(r=>`<tr><td>${r[i.anio_aprobacion]}</td><td>${r[i.institucion]}</td><td>${r[i.url_proyecto]?`<a href="${r[i.url_proyecto]}" target="_blank" rel="noopener">${r[i.nombre]||'(sin nombre)'}</a>`:(r[i.nombre]||'')}</td><td>${r[i.pais]||''}</td><td>${r[i.sector]||''}</td><td>${r[i.forma_financiamiento]||''}</td><td>${(r[i.tipo_ventanilla]||'').replace('_',' ')}</td><td class="n">${r[i.monto_aprobado_usd]===null?'sin dato':fmt(monto(r)/1e6)}</td><td class="n">${r[i.monto_desembolsado_usd]===null?'':fmt(r[i.monto_desembolsado_usd]/1e6)}</td><td>${mo(r)}</td><td>${de(r)}</td></tr>`).join('');
 }
 $('b-csv').onclick=()=>{const q=v=>v===null?'':'"'+String(v).replace(/"/g,'""')+'"';
  const csv=[C.join(',')].concat(filtradas().map(r=>r.map(q).join(','))).join('\\n');

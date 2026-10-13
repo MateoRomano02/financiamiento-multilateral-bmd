@@ -79,12 +79,19 @@ def monto_de_la_ficha(pagina: str) -> dict:
     plano = re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", limpio)))
 
     resultado: dict[str, str] = {}
-    monto = r"((?:USD|EUR|CNY|RMB|ZAR|INR|BRL|RUB)\s?[\d.,]+(?:\s?(?:million|billion))?)"
+    monto = r"((?:USD|EUR|CNY|RMB|ZAR|INR|BRL|RUB|CHF)\s?[\d.,]+(?:\s?(?:million|billion))?)"
     etiquetas = {
         "monto_propuesto": rf"Proposed Limit of NDB Financing\s*{monto}",
         # En prosa, no como campo. Solo 37 de 170 fichas lo traen.
         "costo_total": rf"(?:total cost of the Project is estimated at|Project is estimated to be|Total Project Cost)\s*{monto}",
-        "monto_aprobado": rf"(?<!Proposed Limit of )NDB Financing\s*{monto}",
+        # La ficha nombra el monto vigente de varias formas: "NDB Financing", "Current limit of
+        # financing", "Current Limit of NDB Financing Amount", "Current Limit of NDB Borrowing". Hasta
+        # el 13/10/2026 solo se reconocía la primera, y nueve operaciones quedaban sin monto.
+        "monto_aprobado": (rf"(?:(?<!Proposed )(?:Current |Initial )?Limit of (?:NDB )?(?:Financing|Borrowing)"
+                           rf"(?: Amount)?|(?<!Limit of )NDB Financing)\s*:?\s*{monto}"),
+        # El estado que declara la ficha. El listado no lo trae, y es la única forma de saber que una
+        # operación se canceló.
+        "estado_ficha": r"Status\s+([A-Za-z ]+?)\s+Area Of Operation",
         "fecha_aprobacion": r"(?<!Concept )Approval Date\s*(\d{1,2} [A-Za-z]+ \d{4})",
         "fecha_concepto": r"Concept Approval Date\s*(\d{1,2} [A-Za-z]+ \d{4})",
     }

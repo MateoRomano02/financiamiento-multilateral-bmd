@@ -508,7 +508,9 @@ def normalizar_miga(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "id_proyecto": f"{clave[0]}-{clave[1]}-{contador[clave]}",
              "nombre": r.get("project_name"),
              "pais": r.get("host_country"),
-             "url_proyecto": r.get("project_links"),
+             # Vacío a propósito (H39): project_links (node/<n>) no lleva a la operación, y la
+             # ficha real (/project/<slug> del sitemap) no se cruza sin ambigüedad.
+             "url_proyecto": None,
              "fecha_aprobacion": a_fecha(r.get("project_start_date")),
              # MIGA no publica estado en ninguna forma.
              "estado": "desconocido",
@@ -761,17 +763,16 @@ def normalizar_aiib(ruta: Path, relevamiento: str) -> pd.DataFrame:
 def _unir_anexo_ndb(filas: list[dict], ruta: Path, relevamiento: str) -> list[dict]:
     """Une al corpus del NDB el anexo de operaciones aprobadas de su informe anual.
 
-    La ficha web publica el monto vigente: deja sin monto a las operaciones canceladas y muestra el
-    remanente de las canceladas en parte. El anexo trae lo que aprobó el directorio, y con eso:
+    La ficha web publica el monto vigente, que en las operaciones canceladas en parte es el
+    remanente. El anexo trae lo que aprobó el directorio, y con eso:
     el monto original va en su propia columna sin tocar el vigente; si la ficha no tiene monto se
     completa con el del anexo; las canceladas por completo pasan a "cancelado"; y la operación que
     el listado web no tiene se agrega como fila, con la fuente apuntando al PDF.
 
     Sin PDF descargado devuelve las filas como vienen, para que el corpus se pueda armar igual.
 
-    Krasnodar Cable Car (Rusia, 2019) está en el listado web y no figura en el anexo. El informe
-    2019 solo habla de su preparación, así que probablemente nunca se aprobó, pero eso no está
-    probado: su estado queda como lo publica la ficha y se reporta aparte.
+    Krasnodar Cable Car (Rusia, 2019) está en el listado web y no figura en el anexo porque no es un
+    préstamo: su ficha dice asistencia técnica por USD 400.000, aprobada el 2/12/2019 y cancelada.
     """
     informes = sorted(ruta.parent.glob("ndb_informe_anual_*.pdf"))
     if not informes:
@@ -830,6 +831,9 @@ def _unir_anexo_ndb(filas: list[dict], ruta: Path, relevamiento: str) -> list[di
     return filas
 
 
+ESTADOS_NDB = {"Approved": "aprobado", "Proposed": "propuesto", "Completed": "cerrado", "Cancelled": "cancelado"}
+
+
 def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
     """NDB. El listado no publica montos, pero la ficha de cada proyecto sí.
 
@@ -865,7 +869,9 @@ def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
 
         # El monto aprobado sale de la tabla de aportantes o de la etiqueta de financiamiento;
         # el límite propuesto solo aplica a los que siguen en etapa de concepto.
-        aprobado, moneda_apr = monto_desde_texto(ficha.get("monto_ndb") or ficha.get("monto_aprobado"))
+        # Manda el monto etiquetado de la ficha; la tabla de aportantes puede traer un tramo y no el
+        # total (Serentica: 30 millones en la tabla, 75 en la ficha y en el informe anual).
+        aprobado, moneda_apr = monto_desde_texto(ficha.get("monto_aprobado") or ficha.get("monto_ndb"))
         propuesto, moneda_prop = monto_desde_texto(ficha.get("monto_propuesto"))
         en_concepto = aprobado is None and propuesto is not None
 
@@ -902,9 +908,12 @@ def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "pais": campo(r'class="project-card-country text-small-bold">(.*?)</div>', b),
              "url_proyecto": proyecto or None,
              "fecha_aprobacion": fecha,
-             # El listado no declara estado; se deriva de qué publica la ficha.
-             "estado": "propuesto" if en_concepto else ("aprobado" if aprobado is not None else "desconocido"),
-             "estado_original": "Concept" if en_concepto else ("Approved" if aprobado is not None else None),
+             # El listado no declara estado: manda el que publica la ficha, y si una descarga vieja
+             # no lo trae, se deriva de qué monto publica.
+             "estado": ESTADOS_NDB.get(ficha.get("estado_ficha"))
+                       or ("propuesto" if en_concepto else ("aprobado" if aprobado is not None else "desconocido")),
+             "estado_original": ficha.get("estado_ficha")
+                                or ("Concept" if en_concepto else ("Approved" if aprobado is not None else None)),
              "monto_aprobado_usd": en_dolares,
              "monto_original": monto,
              "moneda_original": moneda,
