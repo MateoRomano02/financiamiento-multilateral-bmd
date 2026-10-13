@@ -37,6 +37,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from .caf_heredada import construir_caf
 from .esquema import COLUMNAS, VENTANILLA_POR_INSTITUCION
 from .prestatario import prestatario_iati
 from .ndb_anexo import URL_INFORME, emparejar, leer_anexo
@@ -972,7 +973,8 @@ def normalizar_todo() -> pd.DataFrame:
     for clave, (patron, funcion) in NORMALIZADORES.items():
         if clave in ACUMULAN_FOTOS:
             fotos = [funcion(r, _fecha_del_nombre(r)) for r in sorted(CRUDO.glob(patron))]
-            partes.append(acumular_fotos(fotos))
+            acumulado = acumular_fotos(fotos)
+            partes.append(construir_caf(acumulado) if clave == "caf" else acumulado)
             continue
         ruta = ultima_descarga(patron)
         partes.append(funcion(ruta, _fecha_del_nombre(ruta)))

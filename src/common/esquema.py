@@ -91,6 +91,11 @@ VARIABLES: dict[str, tuple[str, str]] = {
         "es comparable entre bancos."),
     "fuente_url": ("Trazabilidad", "Dirección de la descarga de la que salió la fila."),
     "fecha_relevamiento": ("Trazabilidad", "Fecha de esa descarga, en formato ISO."),
+    "origen_fila": ("Trazabilidad",
+        "Solo CAF: de dónde sale la fila. iati si viene del archivo IATI (2023 en adelante, y los "
+        "años anteriores que la base heredada no cubre), heredada si viene de la base del "
+        "relevamiento 2022 reconstruida desde los informes anuales, heredada_iati si esa fila cruzó con "
+        "una operación IATI y tomó sus atributos. Vacío en el resto de las instituciones."),
     "clasificacion_te": ("Reservadas",
         "Reservada para la clasificación temática del equipo de investigación. Hoy vacía."),
     "categoria_te": ("Reservadas",

@@ -90,9 +90,24 @@ select,input{width:100%;padding:6px;border:1px solid var(--l);border-radius:4px;
 .barras div{display:grid;grid-template-columns:150px 1fr 90px;gap:8px;align-items:center;font-size:13px;margin:2px 0}
 .barras span.b{background:var(--a);height:14px;display:block}
 .barras .n{text-align:right;font-variant-numeric:tabular-nums}
-.anios{display:flex;align-items:flex-end;gap:4px;height:160px;border-bottom:1px solid var(--l)}
-.anios div{flex:1;background:var(--a);position:relative}
-#g-forma div{background:none;display:flex;flex-direction:column-reverse}#g-forma span{display:block}
+.anios{display:flex;align-items:flex-end;gap:4px;height:190px;border-bottom:1px solid var(--l)}
+.anios>div{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;cursor:pointer}
+.anios .v{flex:none;height:14px;line-height:14px;font-size:10px;text-align:center;white-space:nowrap;color:var(--t);font-variant-numeric:tabular-nums}
+.anios .bar{background:var(--a);width:100%}
+.anios .pila{display:flex;flex-direction:column-reverse;width:100%}.anios .pila span{display:block;width:100%}
+#tip{position:fixed;z-index:9;background:var(--t);color:var(--b);font-size:12px;padding:4px 8px;border-radius:4px;pointer-events:none;display:none;max-width:260px}
+.fecha{display:inline-block;margin:4px 0 8px;padding:6px 12px;border:1px solid var(--t);border-radius:4px;font-weight:600;font-size:15px}
+.guia{border:1px solid var(--l);border-radius:6px;padding:8px 14px;margin:12px 0}.guia summary{color:var(--t);font-size:16px}
+.guia p,.guia dd{margin:6px 0;font-size:14px}.guia dt{font-weight:600;font-size:14px;margin-top:8px}.guia dd{margin-left:0;color:var(--s)}
+.guia .aviso{border-left:3px solid var(--t);padding-left:10px}
+.filtros>div,.kpis>div{min-width:0}
+@media(max-width:600px){
+body{padding:10px}h1{font-size:19px}
+.filtros{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}
+.barras div{grid-template-columns:96px 1fr 58px}
+.anios{gap:2px}.anios .v{font-size:8px;letter-spacing:-.4px}
+.tableros button{padding:8px 10px}
+}
 .leyenda{font-size:12px;color:var(--s);margin:4px 0}.leyenda i{display:inline-block;width:10px;height:10px;margin:0 4px 0 10px;vertical-align:middle}
 .anios-et{display:flex;gap:4px;font-size:11px;color:var(--s)}.anios-et span{flex:1;text-align:center}
 table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid var(--l);padding:4px;text-align:left;vertical-align:top}
@@ -100,9 +115,35 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 .tabla{overflow-x:auto}.tableros button{margin:0 6px 6px 0}.tableros button.on{background:var(--t);color:var(--b)}th[data-o]{cursor:pointer;text-decoration:underline dotted}details summary{cursor:pointer;color:var(--s)}button{padding:6px 10px;border:1px solid var(--t);background:var(--b);border-radius:4px;cursor:pointer}
 </style></head><body>
 <h1>Explorador del corpus de financiamiento multilateral</h1>
+<p class="fecha">Datos actualizados al __FECHA__</p>
 __INGRESO__
+<details class="guia" id="guia" open><summary><b>Guía de lectura</b></summary>
+<p><b>Qué es este corpus.</b> Reúne los compromisos que cada banco multilateral de desarrollo aprobó entre 2014 y 2025
+para financiar proyectos. Son montos aprobados, no desembolsados: un monto aprobado es lo que el banco se comprometió a
+prestar o donar, y puede entregarse en los años siguientes o no entregarse completo.</p>
+<p><b>Cómo usarlo.</b> Los botones de Tablero, arriba, muestran el panorama de todos los bancos juntos o el de un grupo
+bancario, con una ficha que explica cómo publica sus datos. Los filtros acotan por banco, institución, ventanilla,
+período, país, forma de financiamiento y texto libre, y los totales, los gráficos y las tablas se recalculan con cada
+cambio. El botón Copiar link de esta vista guarda los filtros en el enlace para compartirlos. La tabla de operaciones se
+ordena con un clic en cada encabezado y se puede descargar en CSV.</p>
+<dl>
+<dt>Ventanilla soberana y no soberana</dt><dd>La soberana financia a Estados o cuenta con su garantía; la no soberana
+financia a empresas y entidades privadas sin garantía estatal.</dd>
+<dt>Forma del financiamiento</dt><dd>Si la operación es un préstamo, una donación, una garantía u otro instrumento
+(capital, bonos); mixta si combina más de uno. Algunos bancos no la publican.</dd>
+<dt>Dólares corrientes y constantes de 2025</dt><dd>Los corrientes son el valor del dólar en el año de la aprobación. Los
+constantes de 2025 se ajustan por la inflación de Estados Unidos para poder comparar años distintos.</dd>
+<dt>Agregado regional sin país</dt><dd>Operaciones que el banco asigna a una región o a varios países juntos y no a uno
+solo; por eso no entran en el ranking de países.</dd>
+<dt>Desembolsado</dt><dd>Lo que el banco efectivamente entregó. Solo algunos bancos lo publican, así que en muchas
+operaciones ese dato falta.</dd>
+</dl>
+<p class="aviso"><b>Dos advertencias.</b> El archivo oficial de CAF trae cerca del 27% de lo que CAF declara haber aprobado
+en sus informes anuales, y casi nada de sus líneas de crédito a bancos. La IFC anota el tope entero de algunas facilidades
+marco en cada banco participante, por lo que sus montos en mercados financieros pueden estar inflados.</p>
+</details>
 <p class="nota">Proyecto CIAI Nº 34, UNSAM. Operaciones aprobadas 2014 a 2025, sin canceladas, armonizadas desde
-las fuentes oficiales de cada banco. Descargas del __FECHA__. Montos aprobados en millones de dólares, corrientes o constantes de 2025 según el selector.
+las fuentes oficiales de cada banco. Montos aprobados en millones de dólares, corrientes o constantes de 2025 según el selector.
 Sectores tal como los nombra cada banco. Ojo: la IFC anota el tope entero de algunas facilidades marco en cada banco participante, así que sus montos en mercados financieros están inflados. Borrador de trabajo, no para citar.</p>
 <p id="tableros" class="tableros"></p>
 <div class="kpi" id="ficha" style="display:none;margin:8px 0"></div>
@@ -121,17 +162,20 @@ archivo oficial (el corpus). El faltante se informa aparte y no se suma a las op
 <div><label>Forma</label><select id="f-forma"></select></div>
 <div><label>Dólares</label><select id="f-usd"><option value="c">Corrientes</option><option value="k">Constantes de 2025</option></select></div>
 </div>
+<p><button id="b-link">Copiar link de esta vista</button> <span class="nota" id="b-link-estado"></span>
+<input id="b-link-url" readonly style="display:none;margin-top:6px" aria-label="Link de esta vista"></p>
 <div class="kpis">
 <div class="kpi"><span class="nota">Operaciones</span><b id="k-ops"></b></div>
 <div class="kpi"><span class="nota" id="k-monto-et">Aprobado, USD M</span><b id="k-monto"></b></div>
 <div class="kpi"><span class="nota">Con desembolso publicado</span><b id="k-des"></b></div>
 <div class="kpi"><span class="nota">Países</span><b id="k-pais"></b></div>
 </div>
-<h2>Monto aprobado por año</h2><div class="anios" id="g-anios"></div><div class="anios-et" id="g-anios-et"></div>
+<h2>Monto aprobado por año</h2>
+<p class="nota" id="g-anios-eje"></p><div class="anios" id="g-anios"></div><div class="anios-et" id="g-anios-et"></div>
 <h2>Por forma del financiamiento</h2>
 <p class="nota">Con los filtros elegidos. Préstamo, donación, garantía u otro (capital, bonos, gestión de riesgo), según el
 campo de cada fuente; mixta si la operación combina más de una. El AIIB y el NDB no publican la forma.</p>
-<div class="leyenda" id="g-forma-ley"></div><div class="anios" id="g-forma"></div><div class="anios-et" id="g-forma-et"></div>
+<p class="nota" id="g-forma-eje"></p><div class="leyenda" id="g-forma-ley"></div><div class="anios" id="g-forma"></div><div class="anios-et" id="g-forma-et"></div>
 <h2>Comparación entre bancos</h2>
 <p class="nota">Con los filtros elegidos. Cinco principales: porción del monto que se llevan los cinco países que más
 reciben, sin contar los agregados sin país. A ALC: incluye los agregados regionales de la región.</p>
@@ -168,6 +212,7 @@ bancos: elegí una institución para verlos. Al Banco Mundial se le saca el pref
 cumplen los filtros, no solo las 300 que se muestran abajo, con todas sus columnas.</span></p>
 <p class="nota">Clic en el encabezado de una columna para ordenar; otro clic invierte el orden. Clic en la descripción para verla entera.</p>
 <div class="tabla"><table><thead><tr><th data-o="anio_aprobacion">Año</th><th data-o="institucion">Institución</th><th data-o="nombre">Operación</th><th data-o="pais">País</th><th data-o="sector">Sector</th><th data-o="forma_financiamiento">Forma</th><th data-o="tipo_ventanilla">Ventanilla</th><th class="n" data-o="monto">USD M</th><th class="n" data-o="monto_desembolsado_usd">Desembolsado USD M</th><th>Moneda original</th><th>Descripción</th></tr></thead><tbody id="t-cuerpo"></tbody></table></div>
+<div id="tip"></div>
 <script>__CARGADOR__
 // P trae las columnas junto con los datos: así la página nunca interpreta datos nuevos con un orden
 // de columnas viejo, aunque la página y los datos se publiquen en momentos distintos.
@@ -244,16 +289,21 @@ function dibujar(){
  $('k-des').textContent=fmt(f.filter(r=>r[i.monto_desembolsado_usd]!==null).length);
  $('k-pais').textContent=fmt(new Set(f.map(r=>r[i.pais]).filter(Boolean)).size);
  const pa=sumar(f,'anio_aprobacion'),ks=anios.filter(a=>a>=+$('f-desde').value&&a<=+$('f-hasta').value),m=Math.max(1,...ks.map(a=>pa[a]||0));
- $('g-anios').innerHTML=ks.map(a=>`<div title="${a}: ${fmt(pa[a]||0)}" style="height:${100*(pa[a]||0)/m}%"></div>`).join('');
+ const un=$('f-usd').value==='k'?'USD M de 2025':'USD M';
+ const am=ks.reduce((x,y)=>(pa[y]||0)>(pa[x]||0)?y:x,ks[0]);
+ $('g-anios-eje').textContent=ks.length&&m>1?`Cada barra lleva su valor en ${un}. La más alta, ${am}, llega a ${fmt(m)}; la escala empieza en 0.`:'';
+ $('g-anios').innerHTML=ks.map(a=>{const v=pa[a]||0;return `<div data-tip="${a}: ${fmt(v)} ${un}"><span class="v">${v?fmt(v):''}</span><div class="bar" style="height:calc((100% - 14px)*${v/m})"></div></div>`}).join('');
  $('g-anios-et').innerHTML=ks.map(a=>`<span>${String(a).slice(2)}</span>`).join('');
  const pf={};f.forEach(r=>{const a=r[i.anio_aprobacion],k=r[i.forma_financiamiento]||'sin dato';(pf[a]=pf[a]||{})[k]=(pf[a][k]||0)+monto(r)});
- const mf=Math.max(1,...ks.map(a=>Object.values(pf[a]||{}).reduce((x,y)=>x+y,0)));
- $('g-forma').innerHTML=ks.map(a=>`<div style="height:100%">${FORMAS.map(([k,c])=>{const v=(pf[a]||{})[k]||0;return v?`<span title="${a}, ${k}: ${fmt(v/1e6)} M" style="height:${100*v/mf}%;background:${c}"></span>`:''}).join('')}</div>`).join('');
+ const tf=a=>Object.values(pf[a]||{}).reduce((x,y)=>x+y,0),mf=Math.max(1,...ks.map(tf));
+ $('g-forma-eje').textContent=ks.length&&mf>1?`Cada barra lleva su total en ${un}. La más alta llega a ${fmt(mf/1e6)}; la escala empieza en 0.`:'';
+ $('g-forma').innerHTML=ks.map(a=>{const t=tf(a);return `<div data-tip="${a}, total: ${fmt(t/1e6)} ${un}"><span class="v">${t?fmt(t/1e6):''}</span><div class="pila" style="height:calc((100% - 14px)*${t/mf})">${FORMAS.map(([k,c])=>{const v=(pf[a]||{})[k]||0;return v?`<span data-tip="${a}, ${k}: ${fmt(v/1e6)} ${un}" style="height:${100*v/t}%;background:${c}"></span>`:''}).join('')}</div></div>`}).join('');
  $('g-forma-et').innerHTML=$('g-anios-et').innerHTML;
  const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,10);
  barras($('g-paises'),top(sumar(f,'pais')));const unaInst=$('f-inst').value||new Set(f.map(r=>r[i.institucion])).size===1;
  const sinFY=o=>{const r={};Object.entries(o).forEach(([k,v])=>{const c=k.replace(/^FY\\d{2} - /,'');r[c]=(r[c]||0)+v});return r};
  if(unaInst)barras($('g-sectores'),top(sinFY(sumar(f,'sector'))));else $('g-sectores').innerHTML='';
+ ocultarTip();escribirHash();
  const orden=[...f].sort(comparar).slice(0,300);
  $('t-nota').textContent=f.length>300?`(las primeras 300 de ${fmt(f.length)} según el orden elegido)`:'';
  const mo=r=>r[i.moneda_original]&&r[i.moneda_original]!=='USD'?`${r[i.moneda_original]} ${fmt((r[i.monto_original]||0)/1e6)} M`:'';
@@ -263,10 +313,37 @@ function dibujar(){
 $('b-csv').onclick=()=>{const q=v=>v===null?'':'"'+String(v).replace(/"/g,'""')+'"';
  const csv=[C.join(',')].concat(filtradas().map(r=>r.map(q).join(','))).join('\\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='corpus-filtrado.csv';a.click();};
-document.querySelectorAll('.filtros select,.filtros input').forEach(e=>{if(e.id!=='c-seccion')e.addEventListener('input',dibujar)});dibujar();
+// Vista compartible: los filtros viajan en el hash junto a la clave k, que no se toca.
+const S={g:'f-grupo',i:'f-inst',v:'f-vent',d:'f-desde',h:'f-hasta',p:'f-pais',t:'f-texto',f:'f-forma',usd:'f-usd'};
+const DEF={g:'',i:'',v:'',d:String(anios[0]),h:String(anios[anios.length-1]),p:'',t:'',f:'',usd:'c'};
+function aplicarHash(){const q=new URLSearchParams(location.hash.slice(1));
+ Object.entries(S).forEach(([k,id])=>{if(k==='i')instituciones();const e=$(id);let v=q.has(k)?q.get(k):DEF[k];
+  if(e.tagName==='SELECT'&&![...e.options].some(o=>o.value===v))v=DEF[k];e.value=v;});}
+function escribirHash(){const q=new URLSearchParams(location.hash.slice(1));
+ Object.entries(S).forEach(([k,id])=>{const v=$(id).value;if(v===DEF[k])q.delete(k);else q.set(k,v)});
+ const h=q.toString();try{history.replaceState(null,'',h?'#'+h:location.href.split('#')[0])}catch(e){}}
+$('b-link').onclick=async()=>{escribirHash();const u=location.href,c=$('b-link-url');
+ try{await navigator.clipboard.writeText(u);$('b-link-estado').textContent='Link copiado.';c.style.display='none'}
+ catch(e){c.style.display='block';c.value=u;c.focus();c.select();let ok=false;try{ok=document.execCommand('copy')}catch(x){}
+  $('b-link-estado').textContent=ok?'Link copiado.':'Copiá el link seleccionado (Ctrl+C o Cmd+C).'}};
+window.addEventListener('hashchange',()=>{aplicarHash();ficha();dibujar()});
+// Cuadro con el valor de cada barra: al pasar el mouse y al tocar en el celular.
+const tip=$('tip');
+function ocultarTip(){tip.style.display='none'}
+function mostrarTip(t){tip.textContent=t.dataset.tip;tip.style.display='block';const r=t.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight;
+ tip.style.left=Math.max(4,Math.min(innerWidth-w-4,r.left+r.width/2-w/2))+'px';tip.style.top=(r.top-h-6<4?r.bottom+6:r.top-h-6)+'px'}
+document.addEventListener('mouseover',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(t)mostrarTip(t);else ocultarTip()});
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(t)mostrarTip(t);else ocultarTip()});
+window.addEventListener('scroll',ocultarTip,{passive:true});
+// La guía queda abierta la primera vez y se recuerda cerrada.
+const guia=$('guia');try{if(localStorage.getItem('explorador-guia')==='cerrada')guia.open=false}catch(e){}
+guia.addEventListener('toggle',()=>{try{localStorage.setItem('explorador-guia',guia.open?'abierta':'cerrada')}catch(e){}});
+document.querySelectorAll('.filtros select,.filtros input').forEach(e=>{if(e.id!=='c-seccion')e.addEventListener('input',dibujar)});
+aplicarHash();ficha();dibujar();
 async function comentarios(){
  try{if(!COM)throw 0;const cs=await COM.listar();
-  $('c-lista').innerHTML=cs.length?cs.map(c=>`<div class="kpi" style="margin:6px 0"><span class="nota">${esc(c.autor)} · ${esc(c.seccion)} · ${esc(c.creado)} UTC</span><p style="margin:4px 0 0;white-space:pre-wrap">${esc(c.texto)}</p></div>`).join(''):'<p class="nota">Todavía no hay comentarios.</p>';
+  const ETQ={recibido:'Recibido',revision:'En revisión',resuelto:'✓ Resuelto',descartado:'No se aplica'};
+  $('c-lista').innerHTML=cs.length?cs.map(c=>`<div class="kpi" style="margin:6px 0"><span class="nota">${esc(c.autor)} · ${esc(c.seccion)} · ${esc(c.creado)} UTC${c.estado?` · <b>${ETQ[c.estado]||esc(c.estado)}</b>${c.resuelto?' el '+esc(c.resuelto):''}`:' · Pendiente'}</span><p style="margin:4px 0 0;white-space:pre-wrap">${esc(c.texto)}</p>${c.respuesta?`<p class="nota" style="margin:6px 0 0;white-space:pre-wrap"><b>Respuesta:</b> ${esc(c.respuesta)}</p>`:''}</div>`).join(''):'<p class="nota">Todavía no hay comentarios.</p>';
  }catch(e){$('c-lista').innerHTML=COM?'<p class="nota">No se pudieron leer los comentarios.</p>':'<p class="nota">Los comentarios funcionan en la versión publicada, no en el archivo abierto desde la computadora.</p>';if(!COM)$('c-enviar').disabled=true}}
 $('c-enviar').onclick=async()=>{const texto=$('c-texto').value.trim();if(!texto)return;$('c-estado').textContent='Enviando...';
  try{await COM.enviar($('c-seccion').value,texto);$('c-texto').value='';$('c-estado').textContent='Enviado.';comentarios();
