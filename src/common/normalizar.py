@@ -37,6 +37,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from .aiib_desembolsos import unir_desembolsos
 from .caf_heredada import construir_caf
 from .esquema import COLUMNAS, VENTANILLA_POR_INSTITUCION
 from .prestatario import prestatario_iati
@@ -750,7 +751,11 @@ def normalizar_aiib(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "moneda_original": normalizar_moneda(moneda),
              "sector": r.get("sector")}
         )
-    return _cerrar(filas)
+    df = _cerrar(filas)
+    # Desembolso acumulado al 31/12/2025 de la lista oficial, cargada a mano. Sin el archivo
+    # (un clon sin datos) el corpus se arma igual, con el desembolso vacío.
+    listas = sorted(ruta.parent.glob("aiib_desembolsos_*.xlsx"))
+    return unir_desembolsos(df, listas[-1]) if listas else df
 
 
 def _unir_anexo_ndb(filas: list[dict], ruta: Path, relevamiento: str) -> list[dict]:
