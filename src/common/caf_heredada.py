@@ -1,11 +1,14 @@
-"""CAF 2014-2022 desde la base heredada del relevamiento 2022, cruzada con el archivo IATI.
+"""CAF 2014-2025 desde la base heredada (2014-2022) y los informes anuales (2023-2025), cruzadas con el IATI.
 
 El archivo IATI de CAF trae el 27% de lo aprobado según los informes anuales (H37). La base
 heredada (`data/raw/legacy/caf/caf_final.xlsx`, 1.087 filas) la reconstruyó el equipo de 2022 desde
 esos informes y suma el 99,1% de su total para 2014-2022. Por eso, para esos años la base de
 operaciones de CAF es la heredada, y el IATI aporta atributos (ficha, desembolsos, prestatario,
-descripción, estado, fecha exacta) a las filas con las que cruza. Las decisiones técnicas están en
-`docs/criterios-codificacion.md`, sección "CAF 2014-2022: base heredada como base de operaciones".
+descripción, estado, fecha exacta) a las filas con las que cruza. Para 2023-2025 la base son los
+listados por operación de los informes anuales (`data/raw/referencia/caf_operaciones_informes_*.csv`,
+armado con `scripts/extraer_caf_informes.py`), con el mismo cruce con el IATI. Las decisiones técnicas
+están en `docs/criterios-codificacion.md`, secciones "CAF 2014-2022: base heredada como base de
+operaciones" y "CAF 2023-2025: listados de los informes como base de operaciones".
 """
 
 from __future__ import annotations
@@ -19,17 +22,22 @@ from pathlib import Path
 import pandas as pd
 
 from .esquema import COLUMNAS
+from .prestatario import clasifica_nombre
 
 RAIZ = Path(__file__).resolve().parent.parent.parent
 RUTA_HEREDADA = RAIZ / "data" / "raw" / "legacy" / "caf" / "caf_final.xlsx"
 RUTA_INFORMES = sorted((RAIZ / "data" / "raw" / "referencia").glob("caf_aprobaciones_informes_*.csv"))
+RUTAS_OPERACIONES = sorted((RAIZ / "data" / "raw" / "referencia").glob("caf_operaciones_informes_*.csv"))
 
 ANIO_DESDE, ANIO_HASTA = 2014, 2022
+INFORME_DESDE, INFORME_HASTA = 2023, 2025
 
 # Valores de la columna origen_fila.
 ORIGEN_IATI = "iati"
 ORIGEN_HEREDADA = "heredada"
 ORIGEN_HEREDADA_IATI = "heredada_iati"
+ORIGEN_INFORME = "informe"
+ORIGEN_INFORME_IATI = "informe_iati"
 
 # Tolerancias del cruce IATI contra heredada. El monto del IATI y el del informe difieren hasta
 # 2% por redondeos y por tipo de cambio; el año del informe puede estar corrido un año respecto de
@@ -47,6 +55,9 @@ PAISES = {
     "portugal": "Portugal", "rep. dominicana": "Dominican Republic",
     "república dominicana": "Dominican Republic", "trinidad y tobago": "Trinidad and Tobago",
     "uruguay": "Uruguay", "venezuela": "Venezuela",
+    # Países que aparecen solo en los listados de los informes 2023-2025.
+    "antigua y barbuda": "Antigua and Barbuda", "bahamas": "Bahamas", "honduras": "Honduras",
+    "jamaica": "Jamaica",
 }
 
 # Tipo de inversión de la base heredada a la forma de financiamiento del esquema. La cooperación
@@ -143,6 +154,80 @@ def leer_heredada(ruta: Path = RUTA_HEREDADA, relevamiento: str = "2026-10-09") 
     return df[list(COLUMNAS)]
 
 
+def _forma_informe(tipo: str) -> str:
+    """Forma de financiamiento a partir del tipo que declara el listado del informe."""
+    k = _clave(tipo)
+    if "cooperacion" in k:
+        return "donacion"
+    if "inversion patrimonial" in k:
+        return "otro"
+    if "garantia" in k:
+        return "garantia"
+    return "prestamo"
+
+
+# Tipos del listado que solo se dan a clientes no soberanos (bancos, empresas, fondos).
+TIPOS_NO_SOBERANOS = ("linea de credito", "prestamo corporativo", "prestamo sindicado", "inversion patrimonial",
+                      "garantia")
+
+
+def _prestatario_informe(cliente: str | None, tipo: str, pais: str | None) -> str:
+    """Categoría del cliente del listado con las reglas de nombre del IATI; si no reconoce el nombre,
+    manda el tipo (una línea de crédito o una inversión patrimonial no es soberana)."""
+    if not cliente:
+        return "sin_dato"
+    categoria = clasifica_nombre(cliente, pais)[0]
+    if categoria == "sin_dato" and _clave(tipo).startswith(TIPOS_NO_SOBERANOS):
+        return "no_soberana"
+    return categoria
+
+
+def leer_informes(ruta: Path | None = None, relevamiento: str = "2026-10-14") -> pd.DataFrame:
+    """Lee los listados por operación de los informes 2023-2025 y los lleva al esquema común.
+
+    El CSV lo arma `scripts/extraer_caf_informes.py`. Cada fila trae su URL y su página. Los
+    "Fondos de cooperación" de cada país son una sola línea que agrupa varias cooperaciones técnicas
+    (el informe da un monto por país, no uno por cooperación), así que cada una es una fila.
+    """
+    ruta = ruta or (RUTAS_OPERACIONES[-1] if RUTAS_OPERACIONES else None)
+    if ruta is None:
+        return pd.DataFrame(columns=list(COLUMNAS))
+    crudo = pd.read_csv(ruta, dtype=str, keep_default_na=False)
+    ruta_relativa = ruta.relative_to(RAIZ) if ruta.is_relative_to(RAIZ) else ruta
+    filas, usados = [], set()
+    for r in crudo.itertuples(index=False):
+        anio, pais = int(r.anio), pais_heredado(r.pais)
+        titulo, cliente, tipo = _limpiar(r.titulo_crudo) or "", _limpiar(r.cliente), _limpiar(r.tipo) or ""
+        monto = float(r.monto_musd) * 1e6
+        semilla = "|".join(map(str, (anio, pais, titulo, cliente, r.monto_musd)))
+        id_proyecto = f"CAF-I-{anio}-{hashlib.sha1(semilla.encode()).hexdigest()[:8]}"
+        n, base = 2, id_proyecto
+        while id_proyecto in usados:
+            id_proyecto, n = f"{base}-{n}", n + 1
+        usados.add(id_proyecto)
+        # El título de una línea de crédito es solo el tipo: con el cliente queda un nombre que distingue.
+        nombre = f"{titulo} {cliente}" if cliente and not r.programa else titulo
+        categoria = _prestatario_informe(cliente, tipo, pais)
+        filas.append({
+            "banco_grupo": "CAF", "institucion": "CAF",
+            "tipo_ventanilla": categoria if categoria in ("soberana", "no_soberana") else None,
+            "tipo_prestatario": categoria, "prestatario": cliente,
+            "id_proyecto": id_proyecto, "nombre": nombre, "pais": pais,
+            # El informe trae solo el año: se ancla al 1 de enero, igual que la base heredada.
+            "fecha_aprobacion": f"{anio}-01-01", "anio_aprobacion": anio,
+            "estado": "desconocido", "estado_original": None,
+            "monto_aprobado_usd": monto, "instrumento": tipo or None,
+            "forma_financiamiento": _forma_informe(tipo),
+            "fuente_url": f"{r.fuente_url}, página {r.pagina}; listado extraído en {ruta_relativa}",
+            "fecha_relevamiento": relevamiento, "origen_fila": ORIGEN_INFORME,
+        })
+    df = pd.DataFrame(filas)
+    for col in COLUMNAS:
+        if col not in df.columns:
+            df[col] = None
+    return df[list(COLUMNAS)]
+
+
 def _similitud(a: object, b: object) -> float:
     return SequenceMatcher(None, _clave(a), _clave(b)).ratio()
 
@@ -187,7 +272,8 @@ ATRIBUTOS_IATI = ("url_proyecto", "monto_desembolsado_usd", "prestatario", "desc
                   "estado_original")
 
 
-def enriquecer(heredada: pd.DataFrame, iati: pd.DataFrame, pares: list[tuple[int, int]]) -> pd.DataFrame:
+def enriquecer(heredada: pd.DataFrame, iati: pd.DataFrame, pares: list[tuple[int, int]],
+               origen: str = ORIGEN_HEREDADA_IATI, conservar_cliente: bool = False) -> pd.DataFrame:
     """Copia a cada fila heredada cruzada los atributos de su operación IATI.
 
     El monto, el país, el nombre y el año quedan los de la base heredada: es la que suma al
@@ -195,16 +281,22 @@ def enriquecer(heredada: pd.DataFrame, iati: pd.DataFrame, pares: list[tuple[int
     la heredada porque son más finos. La fecha exacta del IATI se usa solo si cae en el mismo año
     que el de la base heredada; si no, manda el año del informe para no mover la fila de año.
     El identificador IATI queda en la fuente para poder volver a la operación.
+
+    Con `conservar_cliente` (listados de los informes) la fila que ya trae cliente conserva el
+    cliente y su categoría: el informe nombra al prestatario y el IATI solo al ejecutor.
     """
     out = heredada.copy()
     for h, i in pares:
         ia = iati.iloc[i]
         pos = out.index[h]
+        con_cliente = conservar_cliente and pd.notna(out.at[pos, "prestatario"])
         for col in ATRIBUTOS_IATI:
+            if con_cliente and col == "prestatario":
+                continue
             valor = ia[col]
             if pd.notna(valor) and str(valor).strip():
                 out.at[pos, col] = valor
-        if pd.notna(ia["tipo_prestatario"]):
+        if pd.notna(ia["tipo_prestatario"]) and not (con_cliente and out.at[pos, "tipo_prestatario"] != "sin_dato"):
             out.at[pos, "tipo_prestatario"] = ia["tipo_prestatario"]
         # La ventanilla declarada en la base heredada manda; si dice "sin especificar", la completa el IATI.
         if pd.isna(out.at[pos, "tipo_ventanilla"]):
@@ -212,7 +304,7 @@ def enriquecer(heredada: pd.DataFrame, iati: pd.DataFrame, pares: list[tuple[int
         if pd.notna(ia["fecha_aprobacion"]) and int(str(ia["fecha_aprobacion"])[:4]) == int(out.at[pos, "anio_aprobacion"]):
             out.at[pos, "fecha_aprobacion"] = ia["fecha_aprobacion"]
         out.at[pos, "fuente_url"] = f"{out.at[pos, 'fuente_url']}; atributos del IATI {ia['id_proyecto']}"
-        out.at[pos, "origen_fila"] = ORIGEN_HEREDADA_IATI
+        out.at[pos, "origen_fila"] = origen
     return out
 
 
@@ -261,23 +353,30 @@ def elegir_iati_sin_sumar(heredada: pd.DataFrame, iati_libres: pd.DataFrame,
 
 
 def construir_caf(iati: pd.DataFrame) -> pd.DataFrame:
-    """Operaciones de CAF del corpus: heredada 2014-2022 (cruzada con el IATI) más el IATI restante.
+    """Operaciones de CAF del corpus: heredada 2014-2022 y listados de los informes 2023-2025, cada
+    una cruzada con el IATI, más el IATI restante.
 
-    `iati` es la salida acumulada de normalizar_iati para CAF. Si no está la base heredada, se
-    devuelve el IATI tal cual, con origen_fila = iati.
+    `iati` es la salida acumulada de normalizar_iati para CAF. Si no está la base heredada, los años
+    2014-2022 quedan con el IATI; si no están los listados de los informes, lo mismo con 2023-2025.
+    Cada IATI se cruza con una sola base (la de su año), así que no hay IATI repetida.
     """
     iati = iati.copy()
     iati["origen_fila"] = ORIGEN_IATI
-    if not RUTA_HEREDADA.exists():
-        return iati
-    heredada = leer_heredada()
-    en_rango = iati["anio_aprobacion"].between(ANIO_DESDE, ANIO_HASTA)
-    iati_rango = iati[en_rango].reset_index(drop=True)
-    resto = iati[~en_rango]
-    pares = cruzar(heredada, iati_rango)
-    base = enriquecer(heredada, iati_rango, pares)
-    cruzadas = {i for _, i in pares}
-    libres = iati_rango[~iati_rango.index.isin(cruzadas)]
-    agregar = elegir_iati_sin_sumar(heredada, libres, _totales_informe())
-    partes = [base, iati_rango.loc[agregar], resto]
+    informe = _totales_informe()
+    partes = []
+    pendiente = iati
+    for desde, hasta, base, origen_cruce, de_informe in (
+            (ANIO_DESDE, ANIO_HASTA, leer_heredada() if RUTA_HEREDADA.exists() else None, ORIGEN_HEREDADA_IATI, False),
+            (INFORME_DESDE, INFORME_HASTA, leer_informes() if RUTAS_OPERACIONES else None, ORIGEN_INFORME_IATI, True)):
+        if base is None or base.empty:
+            continue
+        en_rango = pendiente["anio_aprobacion"].between(desde, hasta)
+        iati_rango = pendiente[en_rango].reset_index(drop=True)
+        pendiente = pendiente[~en_rango]
+        pares = cruzar(base, iati_rango)
+        cruzada = enriquecer(base, iati_rango, pares, origen_cruce, conservar_cliente=de_informe)
+        libres = iati_rango[~iati_rango.index.isin({i for _, i in pares})]
+        agregar = elegir_iati_sin_sumar(base, libres, informe)
+        partes += [cruzada, iati_rango.loc[agregar]]
+    partes.append(pendiente)
     return pd.concat([p for p in partes if len(p)], ignore_index=True)[list(COLUMNAS)]

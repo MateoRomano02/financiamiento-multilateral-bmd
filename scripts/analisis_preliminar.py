@@ -382,14 +382,17 @@ def complemento_caf(df: pd.DataFrame) -> pd.DataFrame:
     Decisión del 9/10 (P22): el archivo IATI de CAF trae el 27% de lo aprobado (H37), así que el
     faltante se informa como complemento agregado, en tabla aparte, sin mezclarlo con operaciones.
     Del lado del corpus, soberano es el Estado nacional más lo subnacional, porque CAF lo informa como
-    riesgo soberano cuando tiene garantía; el resto de los prestatarios cuenta como no soberano.
+    riesgo soberano cuando tiene garantía; los prestatarios sin clasificar (filas de la base heredada
+    que no traen riesgo) van aparte, y el resto cuenta como no soberano.
     """
     archivos = sorted((RAIZ / "data" / "raw" / "referencia").glob("caf_aprobaciones_informes_*.csv"))
     if not archivos:
         return pd.DataFrame()
     inf = pd.read_csv(archivos[-1])
     caf = df[df["institucion"] == "CAF"].copy()
-    caf["riesgo"] = caf["tipo_prestatario"].isin(["soberana", "subnacional"]).map({True: "sob", False: "nos"})
+    caf["riesgo"] = "nos"
+    caf.loc[caf["tipo_prestatario"].isin(["soberana", "subnacional"]), "riesgo"] = "sob"
+    caf.loc[caf["tipo_prestatario"].isna() | (caf["tipo_prestatario"] == "sin_dato"), "riesgo"] = "sd"
     corp = caf.pivot_table(index="anio_aprobacion", columns="riesgo", values="monto_aprobado_usd",
                            aggfunc="sum", fill_value=0) / 1e6
     filas = []
@@ -397,15 +400,17 @@ def complemento_caf(df: pd.DataFrame) -> pd.DataFrame:
         a = int(r["anio"])
         sob = corp.loc[a, "sob"] if a in corp.index else 0.0
         nos = corp.loc[a, "nos"] if a in corp.index else 0.0
+        sd = corp.loc[a, "sd"] if a in corp.index and "sd" in corp.columns else 0.0
         nos_inf = r["no_soberano_musd"] + (r["cuasi_soberano_musd"] if pd.notna(r["cuasi_soberano_musd"]) else 0)
         filas.append({
             "anio": a,
             "informe_total_mm": r["total_aprobado_musd"], "informe_soberano_mm": r["soberano_musd"],
             "informe_no_soberano_mm": nos_inf,
             "corpus_soberano_mm": round(sob), "corpus_no_soberano_mm": round(nos),
+            "corpus_sin_clasificar_mm": round(sd),
             "complemento_soberano_mm": round(max(0.0, r["soberano_musd"] - sob)),
             "complemento_no_soberano_mm": round(max(0.0, nos_inf - nos)),
-            "cobertura_pct": round(100 * (sob + nos) / r["total_aprobado_musd"], 1),
+            "cobertura_pct": round(100 * (sob + nos + sd) / r["total_aprobado_musd"], 1),
             "fuente_url": r["fuente_url"], "pagina": r["pagina"],
         })
     return pd.DataFrame(filas)

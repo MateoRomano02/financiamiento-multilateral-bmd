@@ -51,9 +51,11 @@ FICHAS = {
             "privada, que en 2016 pasó a BID Invest: por eso la serie de la ventanilla privada se lee desde "
             "2016. No publica desembolsos.",
     "CAF": "CAF, Banco de Desarrollo de América Latina y el Caribe. Presta a Estados y a empresas sin "
-           "separar ventanillas; la ventanilla se clasificó por el nombre del prestatario. Atención: su "
-           "archivo oficial trae cerca del 27% de lo que CAF declara haber aprobado en sus informes anuales "
-           "y casi nada de sus líneas de crédito a bancos. La tabla de abajo muestra el faltante por año.",
+           "separar ventanillas; la ventanilla se clasificó por el nombre del prestatario. Su archivo oficial "
+           "trae cerca de un cuarto de lo que CAF declara en sus informes anuales, así que las operaciones "
+           "salen de los informes: 2014-2022 de la base que el equipo reconstruyó en 2022 y 2023-2025 de los "
+           "listados de cada informe. Cada año cierra con su informe, como muestra la tabla de abajo. El "
+           "riesgo soberano o no soberano de cada operación es inferido del cliente.",
     "NDB": "Nuevo Banco de Desarrollo de los BRICS, opera desde 2016. Declara la ventanilla de cada "
            "operación y presta buena parte en monedas locales, convertidas a dólares con el promedio del "
            "año. Los montos se completaron con el anexo de su informe anual 2025. No publica la forma del "
@@ -138,8 +140,8 @@ solo; por eso no entran en el ranking de países.</dd>
 <dt>Desembolsado</dt><dd>Lo que el banco efectivamente entregó. Solo algunos bancos lo publican, así que en muchas
 operaciones ese dato falta.</dd>
 </dl>
-<p class="aviso"><b>Dos advertencias.</b> El archivo oficial de CAF trae cerca del 27% de lo que CAF declara haber aprobado
-en sus informes anuales, y casi nada de sus líneas de crédito a bancos. La IFC anota el tope entero de algunas facilidades
+<p class="aviso"><b>Dos advertencias.</b> Las operaciones de CAF salen de sus informes anuales, porque su archivo oficial
+trae cerca de un cuarto de lo aprobado; el riesgo soberano de cada una es inferido. La IFC anota el tope entero de algunas facilidades
 marco en cada banco participante, por lo que sus montos en mercados financieros pueden estar inflados.</p>
 </details>
 <p class="nota">Proyecto CIAI Nº 34, UNSAM. Operaciones aprobadas 2014 a 2025, sin canceladas, armonizadas desde
@@ -260,7 +262,7 @@ const pct=n=>n.toLocaleString('es-AR',{maximumFractionDigits:1})+'%';
 // Tablero integrado y uno por grupo bancario: cada botón fija el banco y muestra su ficha.
 $('tableros').innerHTML='<span class="nota">Tablero: </span>'+['',...unicos('banco_grupo')].map(g=>`<button data-g="${g}">${g?nom(g):'Integrado'}</button>`).join('');
 document.querySelectorAll('#tableros button').forEach(b=>b.onclick=()=>{$('f-grupo').value=b.dataset.g;$('f-grupo').dispatchEvent(new Event('input'))});
-$('t-caf').innerHTML=(P.complemento_caf||[]).map(x=>`<tr><td>${x.anio}</td><td class="n">${fmt(x.informe_total_mm)}</td><td class="n">${fmt(x.corpus_soberano_mm+x.corpus_no_soberano_mm)}</td><td class="n">${fmt(x.complemento_soberano_mm)}</td><td class="n">${fmt(x.complemento_no_soberano_mm)}</td><td class="n">${pct(x.cobertura_pct)}</td></tr>`).join('');
+$('t-caf').innerHTML=(P.complemento_caf||[]).map(x=>`<tr><td>${x.anio}</td><td class="n">${fmt(x.informe_total_mm)}</td><td class="n">${fmt(x.corpus_soberano_mm+x.corpus_no_soberano_mm+(x.corpus_sin_clasificar_mm||0))}</td><td class="n">${fmt(x.complemento_soberano_mm)}</td><td class="n">${fmt(x.complemento_no_soberano_mm)}</td><td class="n">${pct(x.cobertura_pct)}</td></tr>`).join('');
 function ficha(){const g=$('f-grupo').value;
  document.querySelectorAll('#tableros button').forEach(b=>b.classList.toggle('on',b.dataset.g===g));
  $('ficha').style.display=g&&P.fichas[g]?'block':'none';$('ficha').textContent=P.fichas[g]||'';
