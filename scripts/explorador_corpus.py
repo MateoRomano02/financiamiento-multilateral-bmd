@@ -55,7 +55,8 @@ FICHAS = {
            "trae cerca de un cuarto de lo que CAF declara en sus informes anuales, así que las operaciones "
            "salen de los informes: 2014-2022 de la base que el equipo reconstruyó en 2022 y 2023-2025 de los "
            "listados de cada informe. Cada año cierra con su informe, como muestra la tabla de abajo. El "
-           "riesgo soberano o no soberano de cada operación es inferido del cliente.",
+           "riesgo soberano o no soberano viene de la base heredada en 2014-2022 y se infiere del cliente "
+           "en 2023-2025; lo no soberano da 40% del monto, cerca del 48% que declaran los informes.",
     "NDB": "Nuevo Banco de Desarrollo de los BRICS, opera desde 2016. Declara la ventanilla de cada "
            "operación y presta buena parte en monedas locales, convertidas a dólares con el promedio del "
            "año. Los montos se completaron con el anexo de su informe anual 2025. No publica la forma del "
@@ -141,7 +142,7 @@ solo; por eso no entran en el ranking de países.</dd>
 operaciones ese dato falta.</dd>
 </dl>
 <p class="aviso"><b>Dos advertencias.</b> Las operaciones de CAF salen de sus informes anuales, porque su archivo oficial
-trae cerca de un cuarto de lo aprobado; el riesgo soberano de cada una es inferido. La IFC anota el tope entero de algunas facilidades
+trae cerca de un cuarto de lo aprobado; su riesgo soberano viene de esas bases y no de CAF. La IFC anota el tope entero de algunas facilidades
 marco en cada banco participante, por lo que sus montos en mercados financieros pueden estar inflados.</p>
 </details>
 <p class="nota">Proyecto CIAI Nº 34, UNSAM. Operaciones aprobadas 2014 a 2025, sin canceladas, armonizadas desde
