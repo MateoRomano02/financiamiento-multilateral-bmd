@@ -93,3 +93,18 @@ export CONTACTO="tu.correo@institucion.edu"
 
 Es una práctica de acceso responsable: permite que una institución identifique y contacte a quien
 consume sus datos si lo necesita.
+
+## Fuentes que no se descargan solas
+
+Tres insumos no se pueden volver a bajar automáticamente y este repositorio no los incluye, porque no
+publica datos. Sin ellos el corpus se arma igual, con estas diferencias:
+
+- **CAF.** Su archivo oficial en el estándar IATI trae cerca de un cuarto de lo que CAF declara haber
+  aprobado en sus informes anuales. Las operaciones completas salen de una base reconstruida a mano
+  desde esos informes para 2014-2022 y de los listados de los informes 2023-2025, extraídos con
+  `scripts/extraer_caf_informes.py`. Sin esos archivos, CAF queda solo con lo que publica su archivo
+  oficial.
+- **AIIB, desembolsos.** Salen de la lista oficial de proyectos desembolsados del banco, que su sitio
+  no enlaza de forma estable. Sin ella, el AIIB queda sin desembolsos.
+- **CAF, foto de agosto de 2026.** CAF dejó de publicar las operaciones terminadas en septiembre de
+  2026; la descarga anterior es la única copia de esas filas.
