@@ -163,4 +163,6 @@ def test_2023_2025_vienen_de_los_informes_y_2026_sigue_siendo_iati(caf):
     assert set(caf.loc[caf["anio_aprobacion"].between(2023, 2025), "origen_fila"]) <= {
         ch.ORIGEN_INFORME, ch.ORIGEN_INFORME_IATI, ch.ORIGEN_IATI}
     assert (caf["origen_fila"] == ch.ORIGEN_INFORME).sum() > 0
-    assert set(caf.loc[caf["anio_aprobacion"] >= 2026, "origen_fila"]) == {ch.ORIGEN_IATI}
+    # Lo posterior a 2025 solo puede venir del IATI. Puede no haber ninguna fila: en el CI los tests
+    # corren antes de la descarga y la foto versionada de CAF es de agosto.
+    assert set(caf.loc[caf["anio_aprobacion"] >= 2026, "origen_fila"]) <= {ch.ORIGEN_IATI}
