@@ -22,18 +22,11 @@ puede reproducir ni auditar.
 
 **4. Los criterios los define el equipo de investigación.** Si aparece una decisión de contenido
 (cómo clasificar un proyecto, qué hacer con una discrepancia, cómo mapear un estado), no la
-resuelvas por tu cuenta: anotala en `docs/preguntas-para-el-equipo.md` y consultá.
+resuelvas por tu cuenta: anotala como pregunta abierta y consultá.
 
 ## Agregar un banco nuevo
 
-Cada banco es un módulo en `src/<banco>/` con dos funciones de interfaz uniforme:
-
-```python
-def download() -> Path:      # baja el dato crudo a data/raw/<banco>/ y actualiza el manifest
-def normalize() -> DataFrame # lleva el crudo al esquema común de src/common/esquema.py
-```
-
-Después: agregá el banco a `tests/`, documentá la fuente en `docs/accesos-a-los-datos.md` y
+Agregá su descarga en `scripts/descargar_fuentes.py` y su normalizador en `src/common/normalizar.py`, que lleva el crudo al esquema común de `src/common/esquema.py`. Después: agregá el banco a `tests/`, documentá la fuente en `docs/accesos-a-los-datos.md` y
 cualquier decisión de mapeo en `docs/criterios-codificacion.md`.
 
 ## Scraping responsable

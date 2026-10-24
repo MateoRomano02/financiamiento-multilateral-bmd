@@ -50,31 +50,32 @@ corrida anterior, institución por institución.
 Cada descarga queda registrada en el manifiesto de su directorio con la dirección de origen, la
 fecha, la versión del punto de acceso y el número de registros obtenidos.
 
-Una advertencia sobre la reproducibilidad: algunas fuentes dejan de publicar operaciones. En
-septiembre de 2026 CAF republicó su archivo IATI sin las operaciones ya terminadas, 225 de 478. El
-normalizador de CAF une todas las descargas fechadas que encuentre en `data/raw/caf/`, así que quien
-descargue por primera vez después de esa fecha obtiene solo las que CAF publica hoy. El manifiesto
-de CAF registra cuántas actividades tenía cada archivo.
-
 ## Documentación
 
 | Documento | Contenido |
 |---|---|
 | [docs/accesos-a-los-datos.md](docs/accesos-a-los-datos.md) | De dónde se obtiene el dato de cada institución, en qué formato y bajo qué licencia |
 | [docs/notas-metodologicas.md](docs/notas-metodologicas.md) | Cómo se construye el corpus y por qué, sin terminología técnica |
-| [docs/analisis-codigo-legacy.md](docs/analisis-codigo-legacy.md) | Qué hacía el código del relevamiento anterior y qué se rescató de él |
-| [docs/diccionario-de-variables.md](docs/diccionario-de-variables.md) | Definición de cada variable del esquema común y su cobertura por institución, generado desde el código |
+| [docs/criterios-codificacion.md](docs/criterios-codificacion.md) | Cómo se decidió cada valor derivado |
+| [docs/diccionario-de-variables.md](docs/diccionario-de-variables.md) | Definición de cada variable del esquema común, generado desde el código |
+| [docs/resumen-de-variables.md](docs/resumen-de-variables.md) | Qué publica cada institución y qué campo alimenta cada columna |
+| [docs/guia-composicion-de-cartera.md](docs/guia-composicion-de-cartera.md) | Cómo leer las tablas de composición de cartera |
+| [docs/analisis-codigo-legacy.md](docs/analisis-codigo-legacy.md) | Qué hacía el código del relevamiento anterior y qué se rescató |
 
 ## Estructura
 
 ```
-src/common/     esquema armonizado, validaciones
-src/<banco>/    adquisición y normalización por institución
-scripts/        descarga desde las fuentes y perfilado de bases
-tests/          validaciones del esquema
+src/common/     esquema armonizado, normalizadores y validaciones
+scripts/        descarga, consolidación, análisis y explorador
+tests/          pruebas del esquema y de los normalizadores
 data/raw/       manifiestos de descarga; los datos no se versionan
 docs/           documentación técnica y metodológica
 ```
+
+## Explorador
+
+`uv run python scripts/explorador_corpus.py` genera, a partir del corpus consolidado, un único archivo
+HTML con mapa, evolución por grupo, composición y tabla de operaciones. Se abre con doble clic.
 
 ## Licencia
 
@@ -96,15 +97,15 @@ consume sus datos si lo necesita.
 
 ## Fuentes que no se descargan solas
 
-Tres insumos no se pueden volver a bajar automáticamente y este repositorio no los incluye, porque no
-publica datos. Sin ellos el corpus se arma igual, con estas diferencias:
+Algunos insumos no se pueden volver a bajar automáticamente y este repositorio no los incluye, porque
+no publica datos. Sin ellos el corpus se arma igual, con estas diferencias:
 
-- **CAF.** Su archivo oficial en el estándar IATI trae cerca de un cuarto de lo que CAF declara haber
-  aprobado en sus informes anuales. Las operaciones completas salen de una base reconstruida a mano
-  desde esos informes para 2014-2022 y de los listados de los informes 2023-2025, extraídos con
-  `scripts/extraer_caf_informes.py`. Sin esos archivos, CAF queda solo con lo que publica su archivo
-  oficial.
+- **CAF, operaciones completas.** Su archivo IATI trae cerca de un cuarto de lo que CAF declara haber
+  aprobado en sus informes anuales. Las operaciones completas salen de una base reconstruida desde
+  esos informes para 2014-2022 y de los listados de los informes 2023-2025, extraídos con
+  `scripts/extraer_caf_informes.py`. Sin esos archivos, CAF queda solo con lo que publica su archivo.
+- **CAF, descargas anteriores.** CAF republicó su archivo IATI sin las operaciones terminadas. El
+  normalizador une todas las descargas fechadas de `data/raw/caf/`, así que quien descargue por primera
+  vez obtiene solo lo que CAF publica hoy.
 - **AIIB, desembolsos.** Salen de la lista oficial de proyectos desembolsados del banco, que su sitio
   no enlaza de forma estable. Sin ella, el AIIB queda sin desembolsos.
-- **CAF, foto de agosto de 2026.** CAF dejó de publicar las operaciones terminadas en septiembre de
-  2026; la descarga anterior es la única copia de esas filas.
