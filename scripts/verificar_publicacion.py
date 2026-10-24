@@ -31,6 +31,13 @@ PROHIBIDO = [
      "material academico del estudiante"),
 ]
 
+# Nombres de personas y otros terminos que no se publican: uno por linea en un archivo local que no
+# se versiona, para que la lista misma no quede en el repositorio.
+TERMINOS_LOCALES = RAIZ / ".terminos-no-publicables"
+if TERMINOS_LOCALES.exists():
+    PROHIBIDO += [(rf"(?i)\b{re.escape(t)}\b", "termino no publicable")
+                  for t in TERMINOS_LOCALES.read_text(encoding="utf-8").split("\n") if t.strip()]
+
 # Archivos de datos que no deben versionarse.
 DATOS = {".xlsx", ".xls", ".csv", ".xml", ".js"}
 
