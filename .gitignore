@@ -22,3 +22,5 @@ data/processed/
 # Sistema
 .DS_Store
 .gstack/
+pglite-debug.log
+.gstack/
