@@ -135,8 +135,7 @@ sumar. Dos decisiones sobre cómo se hace:
   discute la traducción, el dato original sigue ahí.
 - **Las traducciones dudosas no las decide el pipeline.** Cuando no está claro a qué categoría
   corresponde un valor, la pregunta va al equipo de investigación, porque es una decisión de
-  contenido, no técnica. Esas preguntas se anotan en
-  [preguntas-para-el-equipo.md](preguntas-para-el-equipo.md).
+  contenido, no técnica. Se anotan como preguntas abiertas.
 
 ---
 
@@ -159,7 +158,22 @@ Cada vez que aparece un error nuevo, se agrega la verificación que lo detecta.
 
 ---
 
-## 8. Qué se puede y qué no se puede pedirle a estos datos
+## 8. Sobre el uso de herramientas de inteligencia artificial
+
+Se usan modelos de lenguaje como apoyo para escribir código y para tareas de extracción de datos
+de documentos, algo que las Recomendaciones del CIAI permiten explícitamente. Dos condiciones que
+este proyecto se impone:
+
+- **Todo resultado se verifica.** Lo que produce un modelo se contrasta contra la fuente original
+  antes de entrar a la base. Nada se incorpora porque "parece razonable".
+- **Ninguna decisión de contenido la toma un modelo.** La clasificación temática de los proyectos
+  es del equipo de investigación. Si en algún momento se usa una herramienta para sugerir
+  clasificaciones, la sugerencia es eso, una sugerencia, y queda registrada como tal para su
+  revisión humana.
+
+---
+
+## 9. Qué se puede y qué no se puede pedirle a estos datos
 
 Una advertencia que conviene tener presente antes de sacar conclusiones:
 
@@ -168,7 +182,7 @@ Una advertencia que conviene tener presente antes de sacar conclusiones:
   resultados engañosos.
 - **La base de CAF es estructuralmente más pobre.** Proviene de informes anuales que solo publican
   el año de aprobación y el monto: no hay día exacto, ni estado del proyecto, ni identificador.
-  El detalle está en [analisis-codigo-legacy.md](analisis-codigo-legacy.md).
+  El detalle está en `docs/analisis-codigo-legacy.md`.
 - **Los montos cambian con el tiempo.** Un proyecto aprobado por cien millones puede terminar
   desembolsando sesenta. Qué número se usa depende de la pregunta que se quiera responder, y
   conviene decidirlo explícitamente antes de armar un gráfico.

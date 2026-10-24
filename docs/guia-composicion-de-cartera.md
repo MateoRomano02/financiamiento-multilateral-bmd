@@ -15,8 +15,7 @@ BID          2014             REFORM / MODERNIZATION OF THE STATE          71   
 BID          2014             TRANSPORT                                    36        1930.4
 ```
 
-Cubren de 2014 a 2025 y excluyen las operaciones canceladas, según el criterio acordado con la
-dirección.
+Cubren de 2014 a 2025 y excluyen las operaciones canceladas, según el criterio acordado.
 
 ## Para qué sirven
 
@@ -55,10 +54,19 @@ clasificación original de cada banco, sin armonizar, porque armonizarlas sin un
 escondería esas diferencias en lugar de mostrarlas. **Comparar dentro de un banco a lo largo del
 tiempo es válido; comparar entre bancos todavía no.**
 
-## Una limitación que conviene saber
+## Dos limitaciones que conviene saber
 
-El NDB no publica montos, así que su tabla trae las operaciones por sector y año pero sin dólares.
-Para ese banco la lectura de la memoria es, por ahora, la única vía a la magnitud.
+**El NDB ya tiene montos, con una advertencia.** En la versión anterior su tabla venía sin dólares.
+Ahora los trae: el listado no publica montos pero la ficha de cada proyecto sí. La advertencia es
+que **44 de sus 146 operaciones están denominadas en moneda local** (yuanes, rand, euros, rupias y
+reales) y se convirtieron a dólares con el promedio anual del año de aprobación. Para esas
+operaciones la cifra en dólares es una estimación nuestra, no un dato de la fuente, y el corpus
+conserva el monto original al lado para poder revisarla.
+
+**El monto es el aprobado, no el desembolsado**, en todas las tablas. Es lo que el directorio
+comprometió al votar la operación, no el dinero que salió. En un préstamo de infraestructura la
+diferencia puede ser de años, y una parte no se desembolsa nunca. La única fuente del corpus que
+publica desembolsos es CAF.
 
 ## Si algo no cuadra
 

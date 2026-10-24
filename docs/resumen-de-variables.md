@@ -1,10 +1,7 @@
 # Resumen de variables por institución
 
-Proyecto Interdisciplinario CIAI-LCD-STD-UNSAM Nº 34.
-6 de septiembre de 2026.
-
 Qué variables publica realmente cada institución del corpus, con qué completitud, y qué campo de
-cada fuente alimenta cada columna del esquema común. 
+cada fuente alimenta cada columna del esquema común.
 
 Está generado con `scripts/perfilar_fuentes.py` sobre las descargas fechadas de `data/raw/`, así
 que es reproducible y corresponde a un estado verificable del dato, no a una lectura de la
@@ -20,14 +17,22 @@ de tipo 3, presente en el 98% de sus actividades. Es exactamente al revés de lo
 porque CAF era la fuente que se daba por más pobre. Para el resto, la distancia entre lo aprobado
 y lo efectivamente desembolsado no es observable con estas fuentes.
 
-El **monto aprobado** lo publican siete de ocho. **El NDB no publica monto en ninguna forma.** Su
-listado da sector, país, fecha, título y ventanilla, y nada más. Cualquier serie de volumen que
-incluya al NDB necesita otra fuente, probablemente sus informes anuales.
+El **monto aprobado** lo publican las ocho, aunque el NDB no en el mismo lugar que el resto.
+**Corregido el 17 de septiembre de 2026:** este documento decía que el NDB no publicaba monto en
+ninguna forma, y era cierto de su listado pero no de la fuente. **La ficha individual de cada
+proyecto sí lo publica**, etiquetado como aporte del banco y como aporte de otras fuentes. Con las
+170 fichas descargadas, 160 traen cifra. La lección es que un campo ausente en el listado no
+significa ausente en la fuente.
 
-La **moneda original** la publican dos de ocho, BID Invest y CAF. El resto informa en dólares sin
-decir si hubo conversión ni con qué tipo de cambio. El **monto en moneda original** no lo publica
-ninguna. El criterio acordado de conservar moneda y monto originales **no es realizable con estas
-fuentes** para seis de las ocho instituciones.
+La **moneda original** la publican tres de ocho, BID Invest, CAF y el NDB. En el NDB no es un dato
+accesorio: **44 de sus 146 operaciones con monto están denominadas en moneda local**, sobre todo en
+yuanes y rand, y hay que convertirlas antes de sumarlas. El resto informa en dólares sin decir si
+hubo conversión ni con qué tipo de cambio.
+
+El **monto en moneda original** lo publica solo el NDB, en sus fichas. BID Invest y CAF declaran la
+moneda pero informan el monto ya convertido a dólares. El criterio acordado de conservar moneda y
+monto originales **no es realizable con estas fuentes** para siete de las ocho instituciones, y para
+el NDB es indispensable.
 
 El **tipo de ventanilla**, soberana o no soberana, lo declaran fila por fila solo el AIIB y el NDB.
 En el resto se deduce de la institución, que es correcto por diseño para BIRF, IDA, IFC, MIGA, BID,
@@ -182,7 +187,7 @@ Archivo `gbid/bid_proyectos_2026-08-21.csv`, 27,329 registros, 28 campos.
 
 Unidad de análisis: **una fila por operación aprobada**.
 
-BID Lab sale de este mismo archivo por código de instrumento MIF, la identificación por código de instrumento. Trae además subsector, modalidad y clasificación ambiental.
+BID Lab sale de este mismo archivo por código de instrumento MIF. Trae además subsector, modalidad y clasificación ambiental.
 
 | Campo | Completitud | Ejemplo |
 |---|---|---|

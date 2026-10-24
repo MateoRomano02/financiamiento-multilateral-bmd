@@ -12,8 +12,8 @@ del dominio que documenta, no en el código en sí.**
 | Código | Estado | Ubicación |
 |---|---|---|
 | Lector de informes de CAF (R) | ✅ Recuperado | `reference/legacy-code/caf_lector-informes.Rmd` |
-| Scraping de la IFC (Python) | ❌ Anunciado en el mail del 13/8, no llegó | |
-| Relevamiento del BID | ❌ Nunca compartido | |
+| Scraping de la IFC (Python) | ❌ Anunciado, no llegó | |
+| Scraping del BID | ❌ Nunca compartido | |
 | Scraping de AIIB | ❌ Perdido (reseteo de equipo, backup incompleto) | |
 | Scraping dinámico de NDB/AIIB | ❌ Perdido | |
 
@@ -24,7 +24,7 @@ que este repositorio existe para no repetir.
 
 ## Lector de informes de CAF (R)
 
-Fecha: septiembre de 2023. Librerías: `pdftools`, `tidyverse`, `rvest`.
+Autoría: JavierPi, 27 de septiembre de 2023. Librerías: `pdftools`, `tidyverse`, `rvest`.
 
 ### Qué hace
 
@@ -61,7 +61,7 @@ Son las que condicionan qué se puede analizar hoy con esos datos:
    supuesto a verificar en cualquier fuente nueva de CAF, porque un error de unidad acá cambia
    el resultado por seis órdenes de magnitud.
 6. **La detección de proyectos es frágil por diseño.** Depende de mayúsculas y de palabras clave
-   en el PDF; cualquier cambio de maquetación del informe la rompe. La propia dirección del proyecto lo describió
+   en el PDF; cualquier cambio de maquetación del informe la rompe. Su autor lo describió
    como "bastante rústico", con ~85% de coincidencia contra lo publicado y completado manual
    posterior.
 
@@ -72,7 +72,7 @@ producir la solución nueva y qué problemas tiene que resolver. El código en s
 
 ---
 
-## Salidas de extracción del relevamiento anterior
+## Salidas de scraping del BID
 
 Sin código, pero los **resultados** sobrevivieron: `bid-invest_scrape-german-20230717.xlsx`
 y `bid-lab_scrape-german-20230816.xlsx`.
@@ -85,8 +85,7 @@ nuevo para ese período.
 
 ## Conclusión operativa
 
-Se arranca de cero con herramientas actuales, decisión ya acordada con el equipo en la reunión
-del 5 de agosto. El código viejo se lee, se documenta y se archiva en `reference/`; no se
+Se arranca de cero con herramientas actuales, decisión acordada con el equipo. El código viejo se lee, se documenta y se archiva en `reference/`; no se
 mantiene ni se migra.
 
 Lo que este repositorio agrega y el proyecto anterior no tuvo: el código versionado y público,
@@ -96,12 +95,12 @@ de modo que la próxima persona que retome el trabajo empiece desde donde este t
 
 ## Script de la IFC en Python
 
-Fecha: mayo de 2023. Única dependencia: `openpyxl`.
+Autoría: Dario, 24 de mayo de 2023. Única dependencia: `openpyxl`.
 Ubicación: `reference/legacy-code/ifc_consolidar-documentos.py`.
 
 ### No es un scraper
 
-Es el hallazgo importante de este archivo. Durante todo el proyecto se lo mencionó como "el
+Es lo más importante de este archivo. Durante todo el proyecto se lo mencionó como "el
 código de scraping de la IFC", el único que había sobrevivido. **No scrapea nada.** Lee un Excel
 local llamado `SPI (1).xlsx`, hoja `Data`, que alguien descargó a mano.
 

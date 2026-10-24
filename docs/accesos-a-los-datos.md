@@ -8,9 +8,7 @@ Toda la verificación se hizo el **21 de agosto de 2026**, con `curl` y `WebFetc
 las páginas y APIs vivas de cada institución (no de memoria), y con una segunda pasada adversarial
 el mismo día dedicada específicamente a confirmar oficialidad y licencia. El razonamiento
 completo, cada afirmación citada con el fragmento de respuesta real, y todo lo que quedó sin
-verificar, vive en `research/relevamiento-de-fuentes.md`. Este documento es la respuesta destilada de ese
-informe, no el razonamiento en sí. Ante cualquier duda sobre una cifra o una URL, la fuente
-primaria está ahí.
+verificar, se resume acá. Ante cualquier duda sobre una cifra o una URL, la fuente primaria es la página oficial.
 
 ---
 
@@ -167,9 +165,6 @@ Se buscó una API o portal de datos abiertos propio de CAF, más allá de IATI. 
   está operativo. Vale la pena reintentarlo cada tanto: si vuelve, sería una fuente mejor que IATI,
   porque un CKAN expone API de consulta y no solo un archivo para bajar entero.
 
-  **Conviene preguntarle al equipo de investigación si esto es lo que escucharon** cuando
-  mencionaron que CAF tenía "una base de datos nueva descargable". Puede que hayan visto ese
-  portal cuando estaba en línea.
 
 - `api.caf.com` resuelve a una IP real pero con los puertos cerrados. Parece infraestructura
   interna, no una API pública.
@@ -235,8 +230,7 @@ está prohibido crear obra derivada o hacer uso comercial, incluyendo reventa o 
 solo atribución. Un análisis académico que cita y analiza el dato con atribución probablemente
 cae dentro del uso permitido, pero publicar el dataset crudo de AIIB en un repositorio abierto (o
 cualquier redistribución del dato en sí, más allá del análisis propio) sí podría chocar con estos
-términos. Esta es una decisión que le corresponde al equipo de investigación, no algo para
-resolver de forma unilateral acá. Las salidas posibles, sin que ninguna esté descartada de
+términos. Es una decisión del equipo de investigación, no del código. Las salidas posibles, sin que ninguna esté descartada de
 antemano:
 
 - Escribirle a AIIB pidiendo consentimiento explícito para redistribuir el dato derivado.
