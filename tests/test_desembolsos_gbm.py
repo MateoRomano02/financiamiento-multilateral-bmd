@@ -1,7 +1,6 @@
 """Tests de la union entre las operaciones del Banco Mundial y su estado de prestamos.
 
-La union se decidio el 29/09/2026 midiendo tres reglas sobre el corpus real. Cada test congela
-uno de los casos que hicieron descartar la regla ingenua de sumar todo por proyecto.
+Cada test congela uno de los casos que hicieron descartar la regla ingenua de sumar todo por proyecto.
 """
 
 import pandas as pd

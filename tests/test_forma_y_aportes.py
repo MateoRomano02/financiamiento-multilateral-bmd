@@ -1,4 +1,4 @@
-"""Tests de la forma de financiamiento recuperada por cruces y de los aportes de terceros (8/10/2026)."""
+"""Tests de la forma de financiamiento recuperada por cruces y de los aportes de terceros."""
 
 import json
 

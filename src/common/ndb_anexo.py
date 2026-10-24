@@ -4,7 +4,7 @@ Por qué existe. El corpus del NDB sale del listado web y de la ficha de cada pr
 publica el monto vigente: en una operación cancelada queda sin monto, y en una cancelada en parte
 muestra lo que quedó. El anexo del informe anual lista las 139 operaciones aprobadas 2016-2025
 con el monto que aprobó el directorio, y con notas al pie que dicen qué se canceló y cuándo.
-La investigación del 8/10/2026 midió la diferencia: 4.908 M de dólares (11,5% del total) entre lo
+La diferencia es de 4.908 M de dólares (11,5% del total) entre lo
 que suma el corpus y lo que declara el informe.
 
 Extracción. Se usa pdfplumber, que es Python puro y corre en GitHub Actions sin instalar nada del
@@ -38,7 +38,7 @@ URL_INFORME = "https://www.ndb.int/wp-content/uploads/2026/07/NDB_AnnualReport20
 
 # Nombres de la web que el informe escribe distinto, o un proyecto que el informe parte en dos
 # filas (5 y 6, 41 y 42). Clave: número de fila del anexo. Valor: URL de la ficha en el listado web.
-# Armada a mano el 8/10/2026 contra el corpus; el emparejamiento por URL no depende de cómo se
+# Armada a mano contra el corpus; el emparejamiento por URL no depende de cómo se
 # escriba el nombre. Las operaciones nuevas del informe no están acá: se emparejan por nombre.
 ALIAS_URL = {
     1: "https://www.ndb.int/project/bndesbrazil/",

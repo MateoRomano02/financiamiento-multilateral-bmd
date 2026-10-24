@@ -1,8 +1,7 @@
 """Quién recibe el préstamo en CAF, FONPLATA y BCIE, y si es soberano.
 
 Estos tres bancos no separan sus ventanillas en instituciones ni publican la garantía soberana en
-ningún campo del archivo IATI (revisado el 8/10/2026 sobre las tres descargas). Por criterio de la
-dirección del 8/10, lo que define la ventanilla es el sujeto del préstamo: un Estado nacional es
+ningún campo del archivo IATI. Lo que define la ventanilla es el sujeto del préstamo: un Estado nacional es
 soberano; una empresa o un banco, no soberano; un gobierno subnacional depende del banco. La única
 señal es el nombre del prestatario, así que la clasificación es por reglas sobre ese nombre, y los
 casos que el nombre no resuelve quedan en categorías de revisión en lugar de forzarse:
@@ -13,8 +12,7 @@ casos que el nombre no resuelve quedan en categorías de revisión en lugar de f
 
 Dónde está el prestatario: en el BCIE, en el receptor de las transacciones (que además declara si
 es sector privado, tipo 70); en FONPLATA, en la organización responsable (rol 2); en CAF solo está
-el ejecutor (rol 4), que no siempre es el deudor. Evidencia y verificaciones: H33 en
-docs/hallazgos.md.
+el ejecutor (rol 4), que no siempre es el deudor.
 """
 
 from __future__ import annotations

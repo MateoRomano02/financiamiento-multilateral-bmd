@@ -15,8 +15,7 @@ NDB = Path(__file__).resolve().parent.parent / "data" / "raw" / "ndb"
 PDFS = sorted(NDB.glob("ndb_informe_anual_*.pdf"))
 HTMLS = sorted(NDB.glob("ndb_proyectos_*.html"))
 
-# Total 2016-2025 que midió la investigación del 8/10/2026 sobre el anexo, en millones de dólares y
-# sin el programa de locomotoras, que está en francos suizos.
+# Total 2016-2025 del anexo, en millones de dólares y sin el programa de locomotoras, que está en francos suizos.
 TOTAL_SIN_CHF_M = 42_527
 
 pytestmark = pytest.mark.skipif(not PDFS, reason="falta la descarga del informe anual del NDB")

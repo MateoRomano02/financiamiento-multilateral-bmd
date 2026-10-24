@@ -1,8 +1,8 @@
 """Tests de CAF 2014-2025: base heredada (2014-2022) y listados de los informes (2023-2025), cruzadas con el IATI.
 
-Protegen el contrato de la decisión del 9/10: para 2014-2022 la base de operaciones de CAF es la
+Protegen el contrato: para 2014-2022 la base de operaciones de CAF es la
 heredada, el IATI aporta atributos sin duplicar, y el total anual queda dentro de 3% del informe.
-Para 2023-2025 la base son los listados por operación de los informes (decisión del 14/10).
+Para 2023-2025 la base son los listados por operación de los informes.
 Los de cruce usan filas armadas a mano; los de totales leen las descargas reales.
 """
 

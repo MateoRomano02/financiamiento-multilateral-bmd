@@ -1,6 +1,6 @@
 """Conversión de dólares corrientes a dólares constantes.
 
-La dirección del proyecto indicó el 17 de septiembre de 2026 usar el deflactor implícito del PBI
+Se usa el deflactor implícito del PBI
 de Estados Unidos, serie A191RD3A086NBEA del Bureau of Economic Analysis publicada en FRED, con
 **año base 2025**.
 
@@ -8,7 +8,7 @@ Por qué importa: el período de análisis abarca doce años, y una serie en dó
 crecimiento real con inflación. Un dólar de 2014 equivale a 1,34 dólares de 2025, así que comparar
 2014 contra 2025 sin deflactar subestima el pasado en un tercio.
 
-Dos advertencias que la propia dirección señaló y que el pipeline no puede resolver solo:
+Dos advertencias que el pipeline no puede resolver solo:
 
 - La deflactación solo es válida sobre operaciones **originalmente denominadas en dólares**. Una
   operación en moneda local ya convertida a dólares por la fuente arrastra el tipo de cambio de su

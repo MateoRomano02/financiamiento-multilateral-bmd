@@ -30,7 +30,7 @@ REFERENCIA = RAIZ / "data" / "raw" / "referencia"
 SALIDA = REFERENCIA / "caf_operaciones_informes_2026-10-14.csv"
 PDFS = RAIZ / "data" / "raw" / "caf" / "informes"
 
-# Páginas del PDF (base 1) con los listados por país, de research/caf-completar-por-operacion.md.
+# Páginas del PDF (base 1) con los listados por país, de los informes.
 PAGINAS = {2023: range(40, 61), 2024: range(47, 69), 2025: range(52, 77)}
 TAMANO_TEXTO = 8.0          # cuerpo de las fichas de operación
 TAMANO_TITULO = 31.0        # nombre del país en el encabezado

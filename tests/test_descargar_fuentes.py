@@ -1,8 +1,7 @@
 """Tests del programa de descarga que no necesitan red.
 
-El 29/09/2026 una edicion borro una constante que usaba el resolvedor del BID. Nada lo detecto:
-el error aparece recien al descargar, y la descarga no corre en los tests. Este test revisa que
-todo nombre global que usa cada funcion del modulo exista.
+Una constante borrada por error no se detecta hasta descargar, y la descarga no corre en los
+tests. Este test revisa que todo nombre global que usa cada funcion del modulo exista.
 """
 
 import builtins
@@ -56,7 +55,7 @@ def pedidos_con_respuestas(codigos):
 
 
 def test_un_error_pasajero_del_servidor_se_reintenta(monkeypatch):
-    """El 503 del Banco Mundial del 29/09 frenaba la actualizacion entera."""
+    """Un 503 pasajero no debe frenar la actualizacion entera."""
     modulo = cargar()
     monkeypatch.setattr(modulo.ClienteConReintentos, "ESPERAS", (0, 0, 0))
     transporte, vistos = pedidos_con_respuestas([503, 503, 200])

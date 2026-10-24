@@ -2,8 +2,7 @@
 
 El listado del NDB no publica montos, que era el hueco más serio del corpus: la única
 institución sin ninguna cifra. Pero **la ficha de cada proyecto sí los trae**, etiquetados: el
-aporte del propio banco bajo "NDB" y el co-financiamiento bajo "Other Sources". Lo señaló la
-dirección del proyecto el 17 de septiembre de 2026.
+aporte del propio banco bajo "NDB" y el co-financiamiento bajo "Other Sources".
 
 Hay que pedir una página por proyecto, unas 170. El sitio responde en unos cuatro segundos, así
 que en serie la descarga lleva doce minutos: se usan seis conexiones en paralelo, que es suficiente
@@ -70,8 +69,8 @@ def monto_de_la_ficha(pagina: str) -> dict:
     decidir cual gana. Si en una descarga futura aparecieran juntas, **manda la vigente**: es la
     que refleja el compromiso de hoy.
 
-    **El costo total del proyecto no es un campo.** La direccion lo pidio el 18 de septiembre de
-    2026 para poder calcular que proporcion de cada proyecto pone el banco. Aparece en apenas 37 de
+    **El costo total del proyecto no es un campo.** Sirve para calcular que proporcion de cada
+    proyecto pone el banco. Aparece en apenas 37 de
     las 170 fichas y siempre dentro de una frase, no como dato etiquetado. Se captura donde esta y
     se declara la cobertura, porque con el 22% no se puede construir una serie.
     """
@@ -85,8 +84,8 @@ def monto_de_la_ficha(pagina: str) -> dict:
         # En prosa, no como campo. Solo 37 de 170 fichas lo traen.
         "costo_total": rf"(?:total cost of the Project is estimated at|Project is estimated to be|Total Project Cost)\s*{monto}",
         # La ficha nombra el monto vigente de varias formas: "NDB Financing", "Current limit of
-        # financing", "Current Limit of NDB Financing Amount", "Current Limit of NDB Borrowing". Hasta
-        # el 13/10/2026 solo se reconocía la primera, y nueve operaciones quedaban sin monto.
+        # financing", "Current Limit of NDB Financing Amount", "Current Limit of NDB Borrowing". Se
+        # reconocen todas para no dejar operaciones sin monto.
         "monto_aprobado": (rf"(?:(?<!Proposed )(?:Current |Initial )?Limit of (?:NDB )?(?:Financing|Borrowing)"
                            rf"(?: Amount)?|(?<!Limit of )NDB Financing)\s*:?\s*{monto}"),
         # El estado que declara la ficha. El listado no lo trae, y es la única forma de saber que una

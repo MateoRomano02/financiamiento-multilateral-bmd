@@ -1,4 +1,4 @@
-"""MIGA no publica enlaces rotos: url_proyecto queda vacío (H39)."""
+"""MIGA no publica enlaces rotos: url_proyecto queda vacío."""
 
 import json
 

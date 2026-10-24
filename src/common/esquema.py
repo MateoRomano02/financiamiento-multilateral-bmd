@@ -5,7 +5,7 @@ Los catalogos cerrados existen para que un valor nuevo e inesperado falle ruidos
 tests en vez de colarse silenciosamente a la base final.
 
 BORRADOR: los catalogos se ajustan cuando el perfilado de las bases heredadas confirme que
-valores reales usa cada banco (ver docs/perfil-bases.md). Todo cambio se documenta en
+valores reales usa cada banco. Todo cambio se documenta en
 docs/criterios-codificacion.md.
 """
 
@@ -82,7 +82,7 @@ VARIABLES: dict[str, tuple[str, str]] = {
     "instrumento": ("Clasificación del banco",
         "Tipo de operación según el banco: préstamo, garantía, inversión de capital, cooperación técnica."),
     "forma_financiamiento": ("Clasificación del banco",
-        "Forma del financiamiento con el criterio de la dirección: prestamo, donacion, garantia u otro "
+        "Forma del financiamiento con el criterio acordado: prestamo, donacion, garantia u otro "
         "(capital accionario, bonos, gestión de riesgo), y mixto si la operación combina más de una "
         "sin separar el monto. Sale del campo de cada fuente, o de un cruce con otra base cuando la fuente no lo trae (BIRF e IDA con el estado de préstamos, BID Invest con la ficha del BID que cita); en FONPLATA y BCIE la fuente declara "
         "préstamo para todas sus operaciones, y en el AIIB y el NDB queda vacía porque no la publican."),

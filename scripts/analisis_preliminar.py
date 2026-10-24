@@ -1,10 +1,8 @@
 """Los cuatro análisis preliminares sobre el corpus consolidado.
 
-Produce las tablas del primer informe de resultados. Cada análisis responde a algo concreto que
-alguien pidió o que la bibliografía del proyecto usa como vocabulario común:
+Produce las tablas del primer informe de resultados. Cada análisis responde a una pregunta concreta del proyecto:
 
-1. **Ventanillas soberanas contra no soberanas.** Es la hipótesis que planteó la dirección en la
-   reunión de inicio: desde 2014 las ventanillas que prestan al sector privado deberían haber
+1. **Ventanillas soberanas contra no soberanas.** Es la hipótesis de partida: desde 2014 las ventanillas que prestan al sector privado deberían haber
    crecido frente a las soberanas, porque el paradigma vigente empuja el financiamiento privado.
 
 2. **Concentración de los primeros cinco países.** Es la métrica que usan tres de los cinco textos
@@ -44,13 +42,12 @@ COMPOSICION = PROCESADO / "composicion-por-banco"
 # La comparación solo tiene sentido dentro del mismo grupo bancario: comparar la IFC contra el
 # BID mezclaría el efecto del paradigma con el del tamaño de cada institución.
 # MIGA emite garantías y BID Lab financia cooperación técnica, así que ninguna de las dos es
-# inequívocamente una ventanilla no soberana. Por indicación de la dirección del proyecto quedan
+# inequívocamente una ventanilla no soberana. Quedan
 # fuera de las dos categorías, sin sumar a ninguna, en lugar de forzarlas a una.
 PARES = {
     "Grupo Banco Mundial": {"soberana": ["BIRF", "IDA"], "no_soberana": ["IFC"]},
     "Grupo BID": {"soberana": ["BID"], "no_soberana": ["BID Invest"]},
 }
-EXCLUIDAS_DE_VENTANILLA = ("MIGA", "BID Lab")
 
 
 def a_markdown(tabla: pd.DataFrame) -> str:
@@ -146,8 +143,7 @@ def topes_de_facilidad_repetidos(df: pd.DataFrame, minimo: int = 10) -> pd.Serie
 def sin_monto(df: pd.DataFrame) -> pd.DataFrame:
     """Las operaciones sin monto, una por fila, para poder rastrearlas a mano.
 
-    La dirección del proyecto las pidió con banco, año y operación para facilitar el rastreo
-    cualitativo: son los casos donde la fuente no publica la cifra y hay que ir al documento.
+    Con banco, año y operación, para facilitar el rastreo cualitativo: son los casos donde la fuente no publica la cifra y hay que ir al documento.
     """
     falta = df[df["monto_aprobado_usd"].isna()]
     return (
@@ -203,8 +199,7 @@ def concentracion(df: pd.DataFrame, top: int = 5) -> pd.DataFrame:
     return pd.DataFrame(filas).sort_values("pct_top5", ascending=False)
 
 
-# Países miembro de cada institución, verificados contra la documentación oficial de cada una el
-# 17 de septiembre de 2026. Son la foto de hoy y no una serie: la membrecía cambia despacio pero
+# Países miembro de cada institución, verificados contra la documentación oficial de cada una. Son la foto de hoy y no una serie: la membrecía cambia despacio pero
 # cambia, y el AIIB en particular sumó miembros durante todo el período que analizamos.
 #
 # El BID es el único que quedó sin verificar: su sitio rechaza todo pedido automatizado con un 403,
@@ -218,7 +213,6 @@ MIEMBROS = {
     "MIGA": (182, "https://www.miga.org/about-us", True),
     "BID": (48, "sin fuente accesible, el sitio rechaza pedidos automatizados", False),
     "BID Invest": (48, "https://www.idbinvest.org/en/about-us", True),
-    # Corregidos el 8/10/2026 con la serie de membrecía (research/membrecia-anio-por-anio.md):
     # CAF suma Antigua y Barbuda y Granada en 2025, y el AIIB tiene 106 ratificados más 5 prospectivos.
     "CAF": (24, "https://www.caf.com/media/4681103/caf-investor-presentation-2602.pdf", True),
     "AIIB": (106, "https://www.aiib.org/en/about-aiib/governance/members-of-bank/index.html", True),  # ratificados
@@ -229,7 +223,7 @@ MIEMBROS = {
 def membrecia_y_concentracion(df: pd.DataFrame, top: int = 5) -> pd.DataFrame:
     """Cruza la concentración medida con la cantidad de países miembro de cada institución.
 
-    Pone a prueba la lectura que propuso la dirección del proyecto el 17 de septiembre de 2026:
+    Pone a prueba la lectura:
     "a menor membrecía, más concentración".
 
     El cruce directo la confirma, pero una parte del efecto es mecánica y conviene separarla. Un
@@ -269,11 +263,11 @@ def spearman(a: pd.Series, b: pd.Series) -> float:
 
 
 # ---------------------------------------------------------------------------
-# 2b. Analisis pedidos por la direccion el 18 y el 22 de septiembre de 2026
+# 2b. Analisis complementarios
 # ---------------------------------------------------------------------------
 
-# Paises de America Latina y el Caribe. La direccion pidio el 22/09 separar ALC del resto en los
-# bancos globales, porque un banco que presta en todo el mundo y uno regional no son comparables
+# Paises de America Latina y el Caribe. Separar ALC del resto en los
+# bancos globales importa porque un banco que presta en todo el mundo y uno regional no son comparables
 # sin ese recorte.
 #
 # El mapeo es NUESTRO y se aplica igual a todas las fuentes, a proposito. Cada banco publica su
@@ -324,7 +318,7 @@ def por_region(df: pd.DataFrame) -> pd.DataFrame:
 def moneda_local(df: pd.DataFrame) -> pd.DataFrame:
     """Proporcion de operaciones denominadas en moneda local, por institucion.
 
-    Lo pidio la direccion del proyecto el 22/09, en cantidad y en monto. Solo se puede contestar para las cuatro
+    En cantidad y en monto. Solo se puede contestar para las cuatro
     fuentes que declaran la moneda de origen: BID Invest, CAF, AIIB y NDB. Las otras seis informan
     en dolares sin decir si hubo conversion, asi que para ellas la pregunta no tiene respuesta con
     estas fuentes y eso tambien es un dato.
@@ -347,8 +341,7 @@ def moneda_local(df: pd.DataFrame) -> pd.DataFrame:
 def aporte_del_banco(df: pd.DataFrame) -> pd.DataFrame:
     """Que proporcion del costo total del proyecto pone el banco.
 
-    Pedido de la direccion el 18/09 para el NDB ("75 sobre 300 no es lo mismo que 75 sobre 100") y
-    de la direccion el 22/09 para el costo de contraparte. Solo lo permiten el BID, que publica el
+    "75 sobre 300 no es lo mismo que 75 sobre 100". Solo lo permiten el BID, que publica el
     costo total como campo, y el NDB, que lo trae en prosa en 37 de sus 170 fichas.
     """
     d = df[df["costo_total_proyecto_usd"].notna() & df["monto_aprobado_usd"].notna()].copy()
@@ -379,7 +372,7 @@ def aporte_del_banco(df: pd.DataFrame) -> pd.DataFrame:
 def complemento_caf(df: pd.DataFrame) -> pd.DataFrame:
     """Lo que CAF declara haber aprobado en su informe anual y el corpus no tiene, por año y riesgo.
 
-    Decisión del 9/10 (P22): el archivo IATI de CAF trae el 27% de lo aprobado (H37), así que el
+    El archivo IATI de CAF trae el 27% de lo aprobado, así que el
     faltante se informa como complemento agregado, en tabla aparte, sin mezclarlo con operaciones.
     Del lado del corpus, soberano es el Estado nacional más lo subnacional, porque CAF lo informa como
     riesgo soberano cuando tiene garantía; los prestatarios sin clasificar (filas de la base heredada
@@ -419,8 +412,8 @@ def complemento_caf(df: pd.DataFrame) -> pd.DataFrame:
 def tamano_medio(df: pd.DataFrame, desde: int = 2014) -> pd.DataFrame:
     """Monto medio y mediano por operacion y anio, dentro de cada grupo y ventanilla.
 
-    La direccion lo sugirio el 22/09 como control complementario del argumento de que la suba de la
-    ventanilla privada es de base amplia: si el monto medio se dispara, la suba vendria de
+    Control complementario del argumento de que la suba de la ventanilla privada es de base
+    amplia: si el monto medio se dispara, la suba vendria de
     operaciones mas grandes y no de mas operaciones.
     """
     d = df[(df["anio_aprobacion"] >= desde) & df["monto_aprobado_usd"].notna()]
@@ -559,8 +552,8 @@ def main() -> int:
             tramo.to_csv(COMPOSICION / f"{nombre}.csv", index=False)
         print(f"\nComposición por banco escrita en {COMPOSICION.relative_to(RAIZ)}/")
 
-        # La tabla completa de operaciones sin monto va como archivo aparte: la dirección la pidió
-        # para poder ir al documento de cada una, y eso no se hace mirando las primeras veinte.
+        # La tabla completa de operaciones sin monto va como archivo aparte, para poder ir al
+        # documento de cada una.
         faltantes = COMPOSICION.parent / "operaciones-sin-monto.csv"
         sin_monto(df).to_csv(faltantes, index=False)
         print(f"Operaciones sin monto escritas en {faltantes.relative_to(RAIZ)}")

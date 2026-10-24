@@ -25,7 +25,6 @@ import openpyxl
 import pandas as pd
 
 HOJA = "All Projects Table 2016-2025"
-CORTE = "2025-12-31"
 FICHA = re.compile(r"aiib\.org/en/projects/details/[^\s]*?/([^/\s]+?)\.html", re.IGNORECASE)
 
 

@@ -5,7 +5,7 @@
       "archivo": "deflactor_pbi_eeuu_2026-09-17.csv",
       "institucion": "Bureau of Economic Analysis via FRED",
       "url_origen": "https://fred.stlouisfed.org/series/A191RD3A086NBEA",
-      "descripcion": "Deflactor implicito del PBI de EEUU, base 2017=100. Lo indico la direccion del proyecto el 17/09/2026 para pasar la serie a dolares constantes con base 2025.",
+      "descripcion": "Deflactor implicito del PBI de EEUU, base 2017=100. Sirve para pasar la serie a dolares constantes con base 2025.",
       "registros": 97
     },
     {

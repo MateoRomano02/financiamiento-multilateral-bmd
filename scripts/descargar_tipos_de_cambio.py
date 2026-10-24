@@ -2,14 +2,10 @@
 
 Son dos usos de la misma fuente. Los tipos de cambio convierten a dólares los montos publicados
 en moneda local, y el deflactor implícito del PBI de Estados Unidos (serie A191RD3A086NBEA)
-expresa la serie en dólares constantes. Hasta el 29 de septiembre de 2026 el deflactor se había
-bajado a mano y ningún programa lo volvía a traer, así que el corpus no era reproducible de punta
-a punta. Ahora se baja acá.
+expresa la serie en dólares constantes. Bajarlos acá hace el corpus reproducible de punta a punta.
 
 Por qué existe. El NDB publica 44 de sus 146 operaciones con monto en moneda local: rand, yuan,
-rupias, reales y euros. Contarlas como dólares multiplicaba su cartera por cinco. La dirección del
-proyecto lo advirtió el 17 de septiembre de 2026, antes de ver el dato: "NDB presta mucho en moneda
-local, ahí habrá que primero convertir a USD".
+rupias, reales y euros. Contarlas como dólares multiplicaba su cartera por cinco. Por eso se convierte a USD antes de sumar.
 
 Las series salen de FRED, la misma fuente que el deflactor, para que todo el tratamiento de valor
 del corpus venga de un solo lugar citable. Se baja la serie diaria completa y el promedio anual se

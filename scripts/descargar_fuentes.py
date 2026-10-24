@@ -15,7 +15,6 @@ cambia entre descargas, asi que la unica forma de detectar un cambio brusco es c
 contra el conteo anterior. Por eso el pipeline nunca fija un numero esperado de filas.
 
 Las URLs y el veredicto de oficialidad de cada fuente estan en docs/accesos-a-los-datos.md.
-La evidencia de como se verifico cada una, en research/relevamiento-de-fuentes.md.
 """
 
 from __future__ import annotations
@@ -75,7 +74,7 @@ FUENTES: tuple[Fuente, ...] = (
             "boardapprovaldate,closingdate,approvalfy,status,"
             # Montos. curr_ibrd_commitment es el campo que separa la ventanilla BIRF de
             # la de IDA; el nombre `ibrdcommamt` que figura en documentacion no existe en
-            # el servicio y volvia vacio en silencio (verificado el 15/09/2026).
+            # el servicio y volvia vacio en silencio.
             "totalamt,curr_total_commitment,curr_ibrd_commitment,idacommamt,"
             "grantamt,lendprojectcost,"
             # Quien recibe y quien ejecuta: el equipo los necesita y no los teniamos
@@ -92,7 +91,7 @@ FUENTES: tuple[Fuente, ...] = (
         descripcion=(
             "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 "
             "porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, "
-            "y 381 de Argentina contra 255 (verificado el 21/08/2026)."
+            "y 381 de Argentina contra 255."
         ),
     ),
     Fuente(
@@ -195,7 +194,7 @@ FUENTES: tuple[Fuente, ...] = (
         extension="xml",
         descripcion=(
             "Archivo de actividades IATI del BCIE. El banco lo actualiza sin cambiarle el nombre: "
-            "tenia 86 operaciones en agosto y 120 el 29/09/2026."
+            "suma operaciones con cada actualizacion."
         ),
     ),
     Fuente(
@@ -247,8 +246,7 @@ FUENTES: tuple[Fuente, ...] = (
 class ClienteConReintentos(httpx.Client):
     """Reintenta las respuestas 429 y 5xx, que en estas fuentes son pasajeras.
 
-    El 29/09/2026 el servicio del Banco Mundial devolvio un 503 en la pagina 23 de 29 y la
-    actualizacion entera se freno. Un error del servidor que se resuelve solo no deberia obligar
+    Un 503 en la pagina 23 de 29 frenaria la actualizacion entera. Un error del servidor que se resuelve solo no deberia obligar
     a volver a descargar todo. Los errores 4xx no se reintentan: dicen que el pedido esta mal.
     """
 
@@ -271,7 +269,7 @@ REGISTRO_IATI = "https://iatiregistry.org/api/3/action/package_search?fq=organiz
 # Organizacion de cada banco en el registro IATI. Cada uno publica dos paquetes, el de actividades
 # (las operaciones, que es el que interesa) y el de organizacion (presupuestos institucionales). El
 # de actividades es el unico cuyo nombre contiene "act": caf-actfile, fonplata_act_trans y
-# bcie-activity, verificado el 29/09/2026.
+# bcie-activity.
 ORGANIZACION_IATI = {"caf_actividades": "caf", "fonplata_actividades": "fonplata", "bcie_actividades": "bcie"}
 
 

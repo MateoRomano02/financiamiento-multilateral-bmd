@@ -1,7 +1,7 @@
 """Tests del normalizador IATI, comun a CAF, FONPLATA y BCIE.
 
-Cada test congela un comportamiento que el 29/09/2026 destapo un error silencioso: codigo que no
-tiraba ninguna excepcion y producia datos mal. Estan escritos contra un archivo minimo armado a
+Cada test congela un comportamiento que antes fallaba en silencio: codigo que no tiraba
+ninguna excepcion y producia datos mal. Estan escritos contra un archivo minimo armado a
 mano, asi que no dependen de ninguna descarga.
 """
 
@@ -105,7 +105,7 @@ def test_las_fotos_se_unen_sin_perder_las_viejas_ni_duplicar_republicadas():
 
 
 def test_un_campo_que_la_foto_nueva_deja_vacio_conserva_el_valor_anterior():
-    """CAF dejo de publicar desembolsos en su archivo del 9/09; el dato de agosto no se pierde."""
+    """Si CAF deja de publicar desembolsos en su archivo, el dato de la foto anterior no se pierde."""
     from src.common.normalizar import acumular_fotos
 
     vieja = pd.DataFrame([{"id_proyecto": "A", "nombre": "Ruta", "anio_aprobacion": 2016,

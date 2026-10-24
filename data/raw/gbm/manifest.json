@@ -8,7 +8,7 @@
       "fecha_descarga": "2026-08-24T01:41:55+00:00",
       "bytes": 49452970,
       "registros": 28081,
-      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255 (verificado el 21/08/2026).",
+      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255.",
       "version_endpoint": "v3"
     },
     {
@@ -18,7 +18,7 @@
       "fecha_descarga": "2026-09-15T20:15:02+00:00",
       "bytes": 52261119,
       "registros": 28113,
-      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255 (verificado el 21/08/2026).",
+      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255.",
       "version_endpoint": "v3"
     },
     {
@@ -78,7 +78,7 @@
       "fecha_descarga": "2026-09-30T00:49:14+00:00",
       "bytes": 52339870,
       "registros": 28161,
-      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255 (verificado el 21/08/2026).",
+      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255.",
       "version_endpoint": "v3"
     },
     {
@@ -168,7 +168,7 @@
       "fecha_descarga": "2026-09-30T00:55:13+00:00",
       "bytes": 52339870,
       "registros": 28161,
-      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255 (verificado el 21/08/2026).",
+      "descripcion": "API de proyectos del Banco Mundial, version 3. Paginada. Se usa v3 y no v2 porque conviven ambas y v3 es mas completa: 28.081 proyectos contra 22.729, y 381 de Argentina contra 255.",
       "version_endpoint": "v3"
     },
     {

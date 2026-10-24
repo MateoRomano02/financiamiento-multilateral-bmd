@@ -94,8 +94,7 @@ def validar_montos(df: pd.DataFrame) -> list[str]:
                 "filas (revisar unidades: millones vs unidades)"
             )
         # Un sobredesembolso menor es un dato de la fuente, no del pipeline: el prestamo se amplio
-        # sin registrar un compromiso nuevo, o se publica solo el compromiso original. Tres
-        # operaciones del BCIE, verificado el 29/09/2026. Se informa, no se corrige ni se recorta.
+        # sin registrar un compromiso nuevo, o se publica solo el compromiso original. Se informa, no se corrige ni se recorta.
         # La tolerancia de un dolar absorbe el redondeo de sumar cuotas con decimales.
         menor = (desembolsado > aprobado.fillna(0) + 1) & (razon < 10)
         if menor.any():

@@ -1,7 +1,6 @@
 """Las etiquetas con que la ficha del NDB nombra el monto vigente.
 
-Hasta el 13/10/2026 el extractor reconocía una sola y nueve operaciones quedaban sin monto, lo que
-llevó a afirmar, mal, que la ficha de un proyecto cancelado no publica el monto (H34).
+La ficha nombra el monto vigente de varias formas; reconocer solo una dejaba operaciones sin monto.
 """
 
 import pytest

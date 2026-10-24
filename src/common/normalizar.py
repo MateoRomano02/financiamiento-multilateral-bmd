@@ -105,7 +105,7 @@ PAISES_ISO2 = {
 }
 
 # Codigos no estandar que publica algun banco, llevados al ISO. El BCIE escribe RD para Republica
-# Dominicana en lugar de DO, en 9 actividades (verificado el 29/09/2026). Sin esto quedaba un pais
+# Dominicana en lugar de DO, en 9 actividades. Sin esto quedaba un pais
 # llamado literalmente "RD" en el corpus, sin ningun error que lo avisara.
 ALIAS_PAIS = {"RD": "DO"}
 
@@ -222,7 +222,7 @@ def _cerrar(filas: list[dict]) -> pd.DataFrame:
     fecha = pd.to_datetime(df["fecha_aprobacion"], errors="coerce")
     df["anio_aprobacion"] = fecha.dt.year
     # El Grupo Banco Mundial cierra el año en junio: lo aprobado en julio de 2024 es del año
-    # fiscal 2025. Lo pidió la dirección el 8/10 para poder contrastar contra sus informes anuales.
+    # fiscal 2025. Permite contrastar contra sus informes anuales.
     df["anio_fiscal"] = (fecha.dt.year + (fecha.dt.month >= 7)).where(df["banco_grupo"] == "GBM")
     return df[list(COLUMNAS)]
 
@@ -233,7 +233,7 @@ def _cerrar(filas: list[dict]) -> pd.DataFrame:
 
 
 # Tolerancias de la union entre los proyectos del Banco Mundial y su estado de prestamos. Se
-# midieron sobre las 3.500 operaciones del periodo que cruzan (29/09/2026): la fecha absorbe
+# midieron sobre las 3.500 operaciones del periodo que cruzan: la fecha absorbe
 # diferencias de registro entre sistemas, y el margen de monto absorbe el tipo de cambio de los
 # creditos de la IDA pactados en Derechos Especiales de Giro o en euros, sin aceptar los siete
 # casos en que los dos sistemas difieren entre dos y diecisiete veces sobre el monto.
@@ -243,8 +243,7 @@ MONTO_TOLERANCIA_PRESTAMO = 0.20
 
 # La IDA no publica si cada crédito es préstamo o donación: lo dice el prefijo del número. Los
 # IDAD, IDAE e IDAH no tienen cronograma de repago ni registran ningún pago, y los IDAG son
-# garantías parciales de riesgo (verificado el 8/10/2026 sobre el estado de créditos; el archivo no
-# trae diccionario de prefijos). El resto son créditos.
+# garantías parciales de riesgo (el archivo no trae diccionario de prefijos). El resto son créditos.
 FORMA_PREFIJO_IDA = {"IDAD": "donacion", "IDAE": "donacion", "IDAH": "donacion", "IDAG": "garantia"}
 
 
@@ -348,9 +347,9 @@ def _clave_pais(valor: object) -> str:
     return re.sub(r"[^a-z]", "", str(valor).lower())
 
 
-# Forma del financiamiento, criterio de la dirección del 8/10: préstamo, donación, garantía u otro
+# Forma del financiamiento, préstamo, donación, garantía u otro
 # (capital accionario, gestión de riesgo, bonos). "mixto" cuando la fuente declara más de una para la
-# misma operación sin separar el monto. El mapeo de cada fuente y su evidencia: research/forma-de-financiamiento.md.
+# misma operación sin separar el monto.
 FORMA_IFC = {"Loan": "prestamo", "Guarantee": "garantia", "Equity": "otro", "Risk Management": "otro"}
 FORMA_IATI = {"421": "prestamo", "410": "prestamo", "110": "donacion", "1100": "garantia", "510": "otro"}
 FORMA_BID = {"Loan Operation": "prestamo", "Container": "prestamo", "Technical Cooperation": "donacion",
@@ -431,19 +430,19 @@ def normalizar_gbm(ruta: Path, relevamiento: str) -> pd.DataFrame:
             "fecha_aprobacion": a_fecha(r.get("boardapprovaldate")),
             "estado": mapear_estado("gbm", r.get("status")),
             "estado_original": r.get("status"),
-            # El servicio no expone el instrumento de préstamo en ninguna forma (verificado
-            # contra el catálogo completo de campos el 15/09/2026).
+            # El servicio no expone el instrumento de préstamo en ninguna forma (según el
+            # catálogo completo de campos).
             "instrumento": None,
             "sector": (r.get("mjsector") or "").split(",")[0].strip() or None,
             "descripcion": _limpiar_texto(r.get("project_abstract")),
         }
         # Los fondos de terceros que administra el banco (donantes, fondos fiduciarios) van aparte
-        # del aporte del banco, por criterio de la dirección del 8/10. Se anotan en una sola de las
+        # del aporte del banco. Se anotan en una sola de las
         # filas del proyecto para que sumar la columna no los cuente dos veces.
         terceros = a_numero(r.get("grantamt")) or None
         # El costo total del proyecto (lendprojectcost) se anota igual en una sola fila: el
         # proyecto tiene un solo costo y sumarlo en las dos ventanillas lo duplicaría. Criterio
-        # en docs/criterios-codificacion.md (8/10); aporte_del_banco suma BIRF más IDA por proyecto.
+        # en docs/criterios-codificacion.md; aporte_del_banco suma BIRF más IDA por proyecto.
         costo = a_numero(r.get("lendprojectcost")) or None
         for institucion, campo in (("BIRF", "curr_ibrd_commitment"), ("IDA", "idacommamt")):
             monto = a_numero(r.get(campo))
@@ -508,7 +507,7 @@ def normalizar_miga(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "id_proyecto": f"{clave[0]}-{clave[1]}-{contador[clave]}",
              "nombre": r.get("project_name"),
              "pais": r.get("host_country"),
-             # Vacío a propósito (H39): project_links (node/<n>) no lleva a la operación, y la
+             # Vacío a propósito: project_links (node/<n>) no lleva a la operación, y la
              # ficha real (/project/<slug> del sitemap) no se cruza sin ambigüedad.
              "url_proyecto": None,
              "fecha_aprobacion": a_fecha(r.get("project_start_date")),
@@ -549,9 +548,8 @@ def normalizar_bid(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "estado_original": r.get("publc_sts_nm"),
              "monto_aprobado_usd": a_numero(r.get("orig_apprvd_useq_amnt")),
              # El BID es la unica fuente del corpus que publica el costo total del proyecto como
-             # campo estructurado, en 27.286 de sus 27.329 filas. La direccion lo pidio el 18/09
-             # para poder medir que proporcion de cada proyecto pone el banco y cuanta contraparte
-             # local aporta el pais. El NDB lo trae en prosa y solo en 37 de 170 fichas.
+             # campo estructurado, en 27.286 de sus 27.329 filas. Permite medir que proporcion de cada
+             # proyecto pone el banco y cuanta contraparte local aporta el pais. El NDB lo trae en prosa y solo en 37 de 170 fichas.
              "costo_total_proyecto_usd": a_numero(r.get("totl_cost_orig")),
              "instrumento": r.get("opertyp_nm"),
              "forma_financiamiento": _forma_bid(r),
@@ -630,7 +628,7 @@ def _sector_iati(act: ET.Element) -> str | None:
     return sectores_cad().get(codigo, codigo)
 
 
-# Fechas de relleno: el archivo de CAF del 9/09/2026 trae compromisos fechados 1900-01-01 (dos
+# Fechas de relleno: el archivo de CAF trae compromisos fechados 1900-01-01 (dos
 # prestamos de 2025 por USD 850 millones) y un inicio 1970-01-01, que es el cero de los relojes de
 # computadora. No son fechas, son campos vacios con otro disfraz.
 FECHAS_DE_RELLENO = {"1900-01-01", "1970-01-01"}
@@ -639,9 +637,9 @@ FECHAS_DE_RELLENO = {"1900-01-01", "1970-01-01"}
 def _fecha_de_compromiso(act: ET.Element) -> str | None:
     """La fecha de la transaccion de compromiso, que es la aprobacion.
 
-    Antes se tomaba el primer activity-date del documento. En CAF y FONPLATA coincidia por el orden
-    de los campos; en el BCIE el primero es el de tipo 1, que resulta ser el compromiso mas 365 dias
-    exactos, y corria un anio las 119 operaciones con compromiso (verificado el 29/09/2026). Si hay
+    No se toma el primer activity-date del documento: en CAF y FONPLATA coincide por el orden de
+    los campos, pero en el BCIE el primero es el de tipo 1, que resulta ser el compromiso mas 365 dias
+    exactos, y corria un anio las operaciones con compromiso. Si hay
     varios compromisos, manda el primero.
     """
     fechas = []
@@ -745,16 +743,14 @@ def normalizar_aiib(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "fecha_aprobacion": fecha,
              "estado": mapear_estado("aiib", r.get("status")),
              "estado_original": r.get("status"),
-             # 12 de las 338 operaciones con monto estan en euros. Hasta el 23 de septiembre de
-             # 2026 se descartaban, asi que quedaban fuera de toda suma sin que nada lo avisara.
-             # Se convierten con el mismo criterio que el NDB.
+             # 12 de las 338 operaciones con monto estan en euros. Se convierten con el mismo criterio que el NDB.
              "monto_aprobado_usd": a_dolares(monto, moneda, int(fecha[:4]) if fecha else None),
              "monto_original": monto,
              "moneda_original": normalizar_moneda(moneda),
              "sector": r.get("sector")}
         )
     df = _cerrar(filas)
-    # Desembolso acumulado al 31/12/2025 de la lista oficial, cargada a mano. Sin el archivo
+    # Desembolso acumulado de la lista oficial, cargada a mano. Sin el archivo
     # (un clon sin datos) el corpus se arma igual, con el desembolso vacío.
     listas = sorted(ruta.parent.glob("aiib_desembolsos_*.xlsx"))
     return unir_desembolsos(df, listas[-1]) if listas else df
@@ -772,7 +768,7 @@ def _unir_anexo_ndb(filas: list[dict], ruta: Path, relevamiento: str) -> list[di
     Sin PDF descargado devuelve las filas como vienen, para que el corpus se pueda armar igual.
 
     Krasnodar Cable Car (Rusia, 2019) está en el listado web y no figura en el anexo porque no es un
-    préstamo: su ficha dice asistencia técnica por USD 400.000, aprobada el 2/12/2019 y cancelada.
+    préstamo: su ficha dice asistencia técnica por USD 400.000, aprobada y cancelada.
     """
     informes = sorted(ruta.parent.glob("ndb_informe_anual_*.pdf"))
     if not informes:
@@ -837,8 +833,7 @@ ESTADOS_NDB = {"Approved": "aprobado", "Proposed": "propuesto", "Completed": "ce
 def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
     """NDB. El listado no publica montos, pero la ficha de cada proyecto sí.
 
-    Lo señaló la dirección del proyecto el 17 de septiembre de 2026, y resultó cierto: hay que
-    pedir una página por proyecto, pero el dato está. Con eso el NDB deja de ser la única
+    Hay que pedir una página por proyecto, pero el dato está. Con eso el NDB deja de ser la única
     institución del corpus sin ninguna cifra.
 
     El sitio usa dos formatos según el estado. Los proyectos aprobados publican el aporte del
@@ -883,15 +878,14 @@ def normalizar_ndb(ruta: Path, relevamiento: str) -> pd.DataFrame:
                  or a_fecha(campo(r'class="project-card-date text-small-bold">(.*?)</div>', b)))
 
         # El NDB presta buena parte de su cartera en moneda local: rand, yuanes, rupias, reales y
-        # euros. Lo advirtio la direccion del proyecto el 17 de septiembre de 2026 y el dato lo
-        # confirma: 44 de 146 operaciones. Tomarlas como dolares multiplicaba la cartera por
+        # euros. 44 de 146 operaciones. Tomarlas como dolares multiplicaba la cartera por
         # cinco. Se convierten con el promedio anual del año de aprobacion, y el monto original se
         # conserva con su moneda para que la conversion sea auditable.
         moneda = normalizar_moneda(moneda)
         anio = int(fecha[:4]) if fecha else None
         en_dolares = a_dolares(monto, moneda, anio)
 
-        # Costo total del proyecto, pedido por la direccion el 18/09 para saber que proporcion
+        # Costo total del proyecto, para saber que proporcion
         # pone el banco. Solo 37 de las 170 fichas lo traen y siempre en prosa, nunca como campo.
         costo, moneda_costo = monto_desde_texto(ficha.get("costo_total"))
         costo_usd = a_dolares(costo, normalizar_moneda(moneda_costo), anio)
@@ -947,9 +941,8 @@ def ultima_descarga(patron: str) -> Path:
     return candidatos[-1]
 
 
-# Fuentes que sacan operaciones de su archivo cuando terminan. El 9/09/2026 CAF republico su
-# archivo IATI con 286 actividades en lugar de 478: saco 225, y 217 de ellas estaban en estado
-# posterior a la finalizacion. Usar solo la ultima foto le quitaba al corpus la mitad de CAF
+# Fuentes que sacan operaciones de su archivo cuando terminan. CAF republico su
+# archivo IATI con menos actividades: saco las ya finalizadas. Usar solo la ultima foto le quitaba al corpus la mitad de CAF
 # 2014-2025. Para estas fuentes se unen todas las fotos descargadas (ver acumular_fotos).
 ACUMULAN_FOTOS = {"caf"}
 
@@ -971,9 +964,8 @@ def acumular_fotos(fotos: list[pd.DataFrame]) -> pd.DataFrame:
     """
     union = pd.concat(fotos, ignore_index=True)
     # De cada operacion manda la foto mas nueva, campo por campo: si la nueva trae un campo vacio,
-    # queda el valor de la anterior. El archivo de CAF del 9/09 dejo de publicar casi todos los
-    # desembolsos (28 transacciones contra 467) y tomar la fila entera de la foto nueva se los
-    # borraba a 215 operaciones.
+    # queda el valor de la anterior. Si una foto deja de publicar los
+    # desembolsos, tomar la fila entera de la foto nueva los borraria.
     union = union.groupby("id_proyecto", sort=False).last().reset_index()
     clave = union["nombre"].fillna("").str.lower().str.strip() + "|" + union["anio_aprobacion"].astype(str)
     mas_nueva = union.groupby(clave)["fecha_relevamiento"].transform("max")

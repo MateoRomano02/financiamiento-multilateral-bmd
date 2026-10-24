@@ -1,7 +1,6 @@
 """La clasificación del prestatario de CAF, FONPLATA y BCIE por su nombre.
 
-Los casos salen de la verificación del 8/10/2026 (H33): prestatarios privados confirmados en
-comunicados de CAF, y las trampas que llevaron a crear las categorías de revisión.
+Los casos son prestatarios privados confirmados en comunicados de CAF, y las trampas que llevaron a crear las categorías de revisión.
 """
 
 import xml.etree.ElementTree as ET

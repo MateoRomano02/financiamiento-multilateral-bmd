@@ -1,8 +1,7 @@
 """Tablas agregadas que alimentan los tableros, sin depender de la herramienta que se elija.
 
 El plan de trabajo compromete tableros por grupo bancario y un tablero integrado. La herramienta
-todavía no está definida: depende de quién los va a usar y quién los mantiene después del
-cuatrimestre, que es una decisión abierta de la dirección. Lo que sí se puede hacer sin esa
+todavía no está definida: depende de quién los va a usar y quién los mantiene después. Lo que sí se puede hacer sin esa
 decisión es preparar los datos, porque cualquier herramienta va a necesitar las mismas tablas.
 
 Todas van en formato largo, una fila por combinación y todos los grupos en el mismo archivo con una

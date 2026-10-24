@@ -2,9 +2,8 @@
 
 El plan de trabajo compromete dejar automatizado el procedimiento de actualización, para que el
 corpus se pueda volver a construir cuando los bancos publiquen datos nuevos sin que nadie tenga que
-acordarse del orden de los pasos. Hasta el 29 de septiembre de 2026 eran seis programas que había
-que correr a mano y en el orden correcto, y uno de los insumos, el deflactor, ni siquiera tenía
-programa.
+acordarse del orden de los pasos. Son varios programas que hay
+que correr en el orden correcto.
 
 Cada paso es uno de los scripts que ya existen: este archivo solo los encadena. Frena en el primer
 error, porque un corpus armado con un paso roto se ve bien y está mal. Al final compara contra la
