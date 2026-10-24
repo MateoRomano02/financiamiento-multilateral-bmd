@@ -350,7 +350,7 @@ def _ilustracion() -> str:
                      f'<path d="{sombra}" stroke-width=".55"/><path d="{cresta}" stroke-width="1.2"/></g>')
     rayos = "".join(f'<path d="{"M-2.2-21L0-42L2.2-21" if k % 2 else "M0-21c3-4-3-8 0-12s3-6 0-9"}" '
                     f'transform="rotate({k * 11.25})"/>' for k in range(32))
-    sol = f'<g transform="translate(985 62)" stroke="#d9a21b"><circle r="18" fill="#fbe9b0"/><circle r="11"/>{rayos}</g>'
+    sol = f'<g class="sol" transform="translate(985 62)" stroke="#d9a21b"><circle r="18" fill="#fbe9b0"/><circle r="11"/>{rayos}</g>'
     return (f'<svg viewBox="0 0 1216 200" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">'
             f'<g fill="none" stroke="#1d3f72" stroke-linejoin="round" stroke-linecap="round">{sol}{"".join(capas)}</g></svg>')
 
@@ -396,7 +396,7 @@ a{color:var(--a)}
 #hero{position:relative;overflow:hidden;border-radius:14px;padding:22px 28px 30px;min-height:200px;background:linear-gradient(180deg,var(--sky0),var(--sky1));animation:entra .5s var(--ease)}
 #hero>svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #hero .texto{position:relative;max-width:620px}
-.marca{display:flex;align-items:center;gap:12px;margin:0;color:var(--ink);font-size:12px;line-height:1.35}.marca b{font:600 22px/1 var(--serif);letter-spacing:.16em;padding-right:12px;border-right:1px solid rgba(29,63,114,.3)}
+.marca{display:flex;align-items:center;gap:12px;margin:0;color:var(--ink);font-size:12px;line-height:1.35}.marca b{display:flex;align-items:center;gap:9px;font:600 21px/1 Helvetica,Arial,sans-serif;letter-spacing:.07em;color:#111;padding-right:12px;border-right:1px solid rgba(29,63,114,.3)}.marca b svg{width:30px;height:27px}
 
 .prosa{max-width:720px}.prosa h3{margin-top:24px}.prosa p{font-size:14.5px;line-height:1.6}.cita{border-left:2px solid var(--l2);padding-left:14px;color:var(--s)}
 .guia{border:1px solid var(--l);border-radius:4px;padding:10px 18px;margin:10px 0;background:var(--panel)}.guia summary{font-size:14px;cursor:pointer}
@@ -472,6 +472,14 @@ svg text{font-family:inherit;font-variant-numeric:tabular-nums}
 .ref>summary::before{content:"\25B8";color:var(--s);font-size:14px}.ref[open]>summary::before{content:"\25BE"}
 .ref>summary .ver{font-size:12px;color:var(--a)}.ref[open]>summary .ver{display:none}
 .recorrido{position:absolute;top:18px;right:20px;z-index:1}
+#p-sobre{max-width:880px}
+.sobre-ir{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}.sobre-ir button{border-radius:99px;padding:5px 14px}
+.faq details{border-bottom:1px solid var(--l);padding:9px 0}.faq summary{font-weight:600;font-size:14.5px;color:var(--t)}
+.faq details p{margin:6px 0 2px;color:var(--s);font-size:14px}
+.ruta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:12px}
+.ruta>div{border-top:2px solid var(--ink);padding-top:8px}.ruta>div:nth-child(2){border-color:var(--sol)}.ruta>div:nth-child(3){border-color:var(--l2)}
+.ruta h3{margin:0 0 6px}.ruta ul{margin:0;padding-left:16px}.ruta li{font-size:13.5px;margin:5px 0;color:var(--s)}
+.decisiones dt{font-weight:650;font-size:14px;margin-top:14px}.decisiones dd{margin:2px 0 0;color:var(--s);font-size:13.5px}
 #tr-capa{position:fixed;inset:0;z-index:1100;display:none}#tr-capa.dim{background:rgba(29,29,27,.4)}
 #tr-foco{position:fixed;z-index:1101;border-radius:6px;pointer-events:none;box-shadow:0 0 0 9999px rgba(29,29,27,.4),0 0 0 2px var(--a);opacity:0;transition:left .3s var(--ease),top .3s var(--ease),width .3s var(--ease),height .3s var(--ease),opacity .2s}
 #tr-foco.v{opacity:1}
@@ -510,7 +518,7 @@ body.fb-on,body.fb-on *{cursor:crosshair}body.fb-on #fb-ui,body.fb-on #fb-ui *{c
 .fb-rf .fb-form{margin-top:4px}
 </style></head><body>
 <header id="hero">__ILUSTRACION__
-<div class="texto"><p class="marca"><b>UNSAM</b><span>Universidad Nacional de San Martín<br>Proyecto CIAI Nº 34</span></p>
+<div class="texto"><p class="marca"><b><svg viewBox="-10 -10 219 198" aria-hidden="true"><path d="M0 0H58L100 13L142 0H199V165H142L100 178L58 165H0Z" fill="none" stroke="#7fa1c8" stroke-width="18" stroke-linejoin="round"/></svg>UNSAM</b><span>Universidad Nacional de San Martín<br>Proyecto CIAI Nº 34</span></p>
 <h1>Explorador del corpus de financiamiento multilateral</h1>
 <p class="fecha">Datos actualizados al __FECHA__</p></div>
 <button type="button" id="b-recorrido" class="recorrido" data-fb="recorrido" data-fb-label="Botón Recorrido">Recorrido</button>
@@ -685,6 +693,7 @@ porción es alta por construcción. Filtros menos país y zona.</p>
 <section id="p-sobre" class="prosa" hidden>
 <div data-fb="sobre-proyecto" data-fb-label="Sobre el proyecto">
 <h2>Sobre el proyecto</h2>
+<p class="sobre-ir"><button data-ir="sobre-faq">Preguntas frecuentes</button><button data-ir="sobre-ruta">Hoja de ruta</button><button data-ir="sobre-decisiones">Decisiones y por qué</button></p>
 <h3>Qué es</h3>
 <p>El Proyecto Interdisciplinario CIAI Nº 34, UNSAM, "Financiamiento multilateral de iniciativas de transición energética", estudia
 cuánto y cómo financian los bancos multilaterales de desarrollo la transición energética. Este explorador es su base de datos para
@@ -710,11 +719,53 @@ cartera privada pasó a BID Invest recién en 2016.</p>
 <h3>Etapa 2</h3>
 <p>Operación por operación, se le asignará una etiqueta de crédito que diga si es verde. Antes hace falta una definición escrita de qué
 cuenta como verde, porque sin ella ningún método automático da un resultado defendible. Está prevista para el año próximo.</p>
-<h3>Cómo citar</h3>
-<p class="cita">Proyecto CIAI Nº 34, UNSAM (2026). Explorador del corpus de financiamiento multilateral. Datos al __FECHA__.</p>
-<h3>Cómo dar feedback</h3>
-<p>Usá el botón Feedback, abajo a la derecha: elegí un elemento de la página y dejá una pregunta, una mejora o algo nuevo. Los
-comentarios se responden en la misma página.</p>
+</div>
+<div id="sobre-faq" class="faq" data-fb="sobre-faq" data-fb-label="Preguntas frecuentes">
+<h2>Preguntas frecuentes</h2>
+<details><summary>¿Qué es un monto aprobado?</summary><p>Lo que el banco se comprometió a prestar o donar cuando aprobó la operación. No es lo desembolsado, que es lo que entregó.
+Pocos bancos publican desembolsos.</p></details>
+<details><summary>¿Por qué no coincide con lo que declara un banco?</summary><p>El explorador suma el aporte de cada banco por operación aprobada, sin las canceladas, convertido a dólares con el tipo de cambio
+promedio del año de aprobación. Los bancos suelen informar con otro corte: el Grupo Banco Mundial usa año fiscal, y algunos informes incluyen
+lo cancelado, el costo total del proyecto o el aporte de terceros.</p></details>
+<details><summary>¿Qué es soberano?</summary><p>Una operación es soberana cuando el prestatario es un Estado o cuenta con su garantía, y no soberana cuando es una empresa u otra entidad.</p></details>
+<details><summary>¿Por qué hay operaciones sin país?</summary><p>Son operaciones de una región o de varios países. No entran en los mapas ni en los rankings de países, pero sí en los totales.</p></details>
+<details><summary>¿Cada cuánto se actualiza?</summary><p>Cada lunes, de forma automática, desde las fuentes oficiales. El encabezado muestra la fecha de los datos.</p></details>
+<details><summary>¿Cómo se cita?</summary><p class="cita">Proyecto CIAI Nº 34, UNSAM (2026). Explorador del corpus de financiamiento multilateral. Datos al __FECHA__.</p></details>
+<details><summary>¿Cómo se descargan los datos?</summary><p>En la pestaña Resumen, al final de la lista de operaciones, el botón Descargar las filtradas como CSV baja lo que muestran los filtros, con todas las columnas.</p></details>
+<details><summary>¿Cómo se comenta?</summary><p>Con el botón Feedback, abajo a la derecha: elegí un elemento de la página y dejá una pregunta, una mejora o algo nuevo. Los comentarios se responden en la misma página.</p></details>
+</div>
+<div id="sobre-ruta" data-fb="sobre-ruta" data-fb-label="Hoja de ruta">
+<h2>Hoja de ruta</h2>
+<div class="ruta">
+<div><h3>Hecho, de agosto a octubre</h3><ul>
+<li>Corpus de operaciones aprobadas de los siete grupos de bancos</li>
+<li>Informes de acceso a los datos y de calidad de las bases</li>
+<li>Actualización semanal automática</li>
+<li>Explorador con mapa, composición, membrecía y recorrido guiado</li></ul></div>
+<div><h3>Ahora, noviembre</h3><ul>
+<li>Revisión de los tableros por banco con la dirección</li>
+<li>Contraste de CAF con sus informes anuales</li>
+<li>Exposición del proyecto</li></ul></div>
+<div><h3>Después</h3><ul>
+<li>Informe final, a fines de noviembre</li>
+<li>Etapa 2, en 2027: etiqueta de crédito verde, operación por operación</li></ul></div>
+</div>
+</div>
+<div id="sobre-decisiones" class="decisiones" data-fb="sobre-decisiones" data-fb-label="Decisiones y por qué">
+<h2>Decisiones y por qué</h2>
+<dl>
+<dt>La unidad son los compromisos de cada banco (la dirección del proyecto)</dt><dd>Lo aprobado está en todas las fuentes; los desembolsos casi no se publican.</dd>
+<dt>Cartera completa, sin recorte por país (la referente de los datos)</dt><dd>El recorte se hace al analizar, para no tener que rehacer el corpus.</dd>
+<dt>Las canceladas quedan fuera y las operaciones en preparación entran marcadas (la dirección del proyecto)</dt><dd>Lo cancelado no es financiamiento; lo que está en preparación es un compromiso en marcha.</dd>
+<dt>El monto es el aporte del banco (la dirección del proyecto)</dt><dd>Importa cuánto se compromete cada banco; el aporte de terceros va en una columna aparte.</dd>
+<dt>Moneda original y dólares corrientes, con constantes de 2025 al lado (la dirección del proyecto)</dt><dd>Conservar la moneda permite auditar la conversión, y el dólar permite sumar.</dd>
+<dt>Soberano o no soberano según el prestatario (la referente de los datos)</dt><dd>Es el único criterio que se aplica igual en todos los bancos.</dd>
+<dt>MIGA y BID Lab no cuentan como soberanos ni como no soberanos (la dirección del proyecto)</dt><dd>Garantías y cooperación técnica no son inequívocamente no soberanas.</dd>
+<dt>Cada banco con sus propios sectores (la dirección del proyecto)</dt><dd>Los catálogos no son comparables; reclasificar exige leer los textos de los proyectos y queda para otra etapa.</dd>
+<dt>Base completa y consistente antes que más bancos (la dirección del proyecto)</dt><dd>Un universo parcial hace falsas las comparaciones.</dd>
+<dt>2020 se lee aparte (la referente de los datos)</dt><dd>Los bancos reprogramaron préstamos ya aprobados y la carga fue desordenada.</dd>
+<dt>Se unen las descargas de CAF (el equipo técnico)</dt><dd>CAF dejó de publicar operaciones terminadas; tomar solo la última descarga las perdería.</dd>
+</dl>
 </div>
 </section>
 <div id="fb-ui">
@@ -850,6 +901,7 @@ function pestania(t,dib){if(!TABS.some(x=>x[0]===t))t='resumen';pararTodo();TAB=
 function marcarVista(){$('p-mapa').dataset.vista=VISTA;document.querySelectorAll('#m-vista button').forEach(b=>{const on=b.dataset.v===VISTA;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)})}
 document.querySelectorAll('#m-vista button').forEach(b=>b.onclick=()=>{if(b.dataset.v===VISTA)return;parar(MAPA);VISTA=b.dataset.v;marcarVista();if(VISTA!=='globo')pausarGlobo();escribirHash();dMapa()});
 function dibujarTab(){ocultarTip();({resumen:dResumen,mapa:dMapa,comp:dComp,membre:dMembre,sobre:dSobre})[TAB](FILT);}
+document.querySelectorAll('[data-ir]').forEach(b=>b.onclick=()=>$(b.dataset.ir).scrollIntoView({behavior:REDUCE?'auto':'smooth'}));
 function dSobre(){const g=enOrden(unicos('banco_grupo')).map(nom),
  v={ops:fmt(D.length),anios:`${anios[0]} y ${anios[anios.length-1]}`,inst:unicos('institucion').length,ngrupos:g.length,grupos:g.slice(0,-1).join(', ')+' y '+g[g.length-1]};
  document.querySelectorAll('#p-sobre [data-v]').forEach(e=>{e.textContent=v[e.dataset.v]})}
@@ -1650,7 +1702,7 @@ def main() -> int:
 
     if not PUBLICABLE:
         return 0
-    web = (base.replace("__INGRESO__", INGRESO).replace("<script>__CARGADOR__", "</div><script type=\"module\">" + CARGADOR)
+    web = (base.replace("__INGRESO__", INGRESO).replace("<script>__CARGADOR__", "</div></div><script type=\"module\">" + CARGADOR)
            .replace("__ARRANQUE__", ""))
     SALIDA_WEB.parent.mkdir(parents=True, exist_ok=True)
     SALIDA_WEB.write_text(web, encoding="utf-8")

@@ -285,3 +285,8 @@ AGREGADOS_SIN_PALABRA_CLAVE = {
     "Eastern Europe Subregion", "Central Europe Subregion", "Central America Subregion",
     "Southeast Asia Subregion", "Caribbean Subregion",
 }
+
+
+def test_el_generador_no_lleva_correos():
+    fuente = Path(ex.__file__).read_text(encoding="utf-8")
+    assert not re.search(r"[\w.+-]+@[a-z-]+\.[a-z.]{2,}\b", fuente)
