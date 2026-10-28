@@ -363,8 +363,8 @@ PAGINA = r"""<!doctype html>
 <title>Explorador del corpus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
-<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
 <style>
 :root{color-scheme:light;--t:#1d1d1b;--s:#5f5e5a;--m:#8b8982;--l:#e6e4de;--l2:#d2cfc7;--b:#fff;--panel:#f8f7f4;--a:#2a78d6;
 --seq0:#cfe2f8;--seq1:#0b3a80;--nodata:#eceae5;--sel:#111;
@@ -790,9 +790,10 @@ const U_GEOJSON='https://cdn.jsdelivr.net/gh/vasturiano/globe.gl@2.45.0/example/
 const U_GLOBE=['https://cdn.jsdelivr.net/npm/globe.gl@2.46.2/dist/globe.gl.min.js','sha384-1uolMBZ25k3zJcNwCLEv49+L+m2dZudqAzsoSAJfQTzDCSBxJzrMuZ2dkp/5JKiT'];
 const fmt=n=>n.toLocaleString('es-AR',{maximumFractionDigits:0});
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const urlSegura=u=>/^https?:\/\//i.test(String(u||''))?esc(u):'';
 const $=id=>document.getElementById(id);
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-function opciones(sel,valores,todas){sel.innerHTML=(todas?'<option value="">'+todas+'</option>':'')+valores.map(v=>`<option>${v}</option>`).join('')}
+function opciones(sel,valores,todas){sel.innerHTML=(todas?'<option value="">'+todas+'</option>':'')+valores.map(v=>`<option>${esc(v)}</option>`).join('')}
 const unicos=c=>[...new Set(D.map(r=>r[i[c]]).filter(v=>v!==null&&v!==''))].sort();
 const NOMBRE={GBM:'Grupo Banco Mundial',GBID:'Grupo BID'};const nom=g=>NOMBRE[g]||g;
 // Un color por grupo, siempre el mismo, en el orden fijo de la paleta.
@@ -813,7 +814,7 @@ function numero(el,a){const de=+el.dataset.v||0;el.dataset.v=a;animar(el,'n',550
 // Resaltado cruzado: pasar el mouse por un grupo lo destaca en todos los gráficos y baja el resto.
 let HL=null;
 function resaltar(g){if(g===HL)return;HL=g;document.querySelectorAll('[data-grp]').forEach(e=>e.classList.toggle('dim',!!g&&e.dataset.grp!==g))}
-$('f-grupo').innerHTML='<option value="">Todos</option>'+enOrden(unicos('banco_grupo')).map(v=>`<option value="${v}">${nom(v)}</option>`).join('');
+$('f-grupo').innerHTML='<option value="">Todos</option>'+enOrden(unicos('banco_grupo')).map(v=>`<option value="${esc(v)}">${esc(nom(v))}</option>`).join('');
 opciones($('f-forma'),unicos('forma_financiamiento'),'Todas');
 // La institución depende del banco elegido, para que no se pueda pedir una combinación imposible.
 function instituciones(){const g=$('f-grupo').value,actual=$('f-inst').value;
@@ -866,10 +867,10 @@ function ficha(){const g=$('f-grupo').value;
  $('caf-comp').style.display=g==='CAF'&&(P.complemento_caf||[]).length?'block':'none';}
 $('f-grupo').addEventListener('input',ficha);ficha();
 const VG=[...new Set(V.map(x=>x.grupo))].sort((a,b)=>GR.indexOf(cod(a))-GR.indexOf(cod(b)));
-$('t-vent-cab').innerHTML='<tr><th>Año</th>'+VG.map(g=>`<th class="n">${g}</th>`).join('')+'</tr>';
+$('t-vent-cab').innerHTML='<tr><th>Año</th>'+VG.map(g=>`<th class="n">${esc(g)}</th>`).join('')+'</tr>';
 $('t-vent').innerHTML=[...new Set(V.map(x=>x.anio))].sort().map(a=>{const v=g=>{const x=V.find(y=>y.anio===a&&y.grupo===g);return x?pct(x.pct_no_soberana):''};
  return `<tr><td>${a}</td>${VG.map(g=>`<td class="n">${v(g)}</td>`).join('')}</tr>`}).join('');
-$('t-fuentes').innerHTML=F.map(x=>`<tr><td>${x.institucion}</td><td class="n">${fmt(x.operaciones)}</td><td>${x.descargado}</td><td><a href="${x.fuente}" target="_blank" rel="noopener">${esc(x.fuente)}</a></td></tr>`).join('');
+$('t-fuentes').innerHTML=F.map(x=>`<tr><td>${esc(x.institucion)}</td><td class="n">${fmt(x.operaciones)}</td><td>${esc(x.descargado)}</td><td><a href="${urlSegura(x.fuente)}" target="_blank" rel="noopener">${esc(x.fuente)}</a></td></tr>`).join('');
 
 // ---- Hitos: líneas de contexto en los gráficos de tiempo y marcas en los controles de año.
 const HITOS=[{a:2015,c:'París',t:'Acuerdo de París',f:'Diciembre de 2015'},
@@ -964,7 +965,7 @@ function dEvol(f){
      return `<rect x="${x(a)}" width="${x.bandwidth()}" y="${y0}" height="${Math.max(0,y1-y0-1.5)}" fill="${colF(k)}" data-tip="${a} · ${k}\n${fmt(nf[a+'|'+k])} ${un}"/>`}).join('')}).join('')+hitosSvg(xc,ks,m,h)+'</svg>';
   };
   animar(el2,'forma',650,pintarF);
-  $('e-forma-ley').innerHTML=FORMAS.filter(k=>f.some(r=>(r[i.forma_financiamiento]||'sin dato')===k)).map(k=>`<span><i style="background:${colF(k)}"></i>${k}</span>`).join('');
+  $('e-forma-ley').innerHTML=FORMAS.filter(k=>f.some(r=>(r[i.forma_financiamiento]||'sin dato')===k)).map(k=>`<span><i style="background:${colF(k)}"></i>${esc(k)}</span>`).join('');
  }
 }
 // Seguir con el mouse el año y el grupo que se están mirando en el área apilada.
@@ -978,7 +979,7 @@ $('e-pct').addEventListener('input',()=>dEvol(FILT));
 
 // ---- Resumen: comparación entre bancos, rankings y operaciones.
 function dComparar(f){const total=f.reduce((a,r)=>a+monto(r),0)/1e6;
- $('t-bancos').innerHTML=porBanco(f,total).map(b=>`<tr><td>${b[0]}</td><td class="n">${fmt(b[1])}</td><td class="n">${fmt(b[2])}</td><td class="n">${pct(b[3])}</td><td class="n">${b[4].toLocaleString('es-AR',{maximumFractionDigits:1})}</td><td class="n">${pct(b[5])}</td><td class="n">${pct(b[6])}</td><td>${b[7]}</td></tr>`).join('');}
+ $('t-bancos').innerHTML=porBanco(f,total).map(b=>`<tr><td>${esc(b[0])}</td><td class="n">${fmt(b[1])}</td><td class="n">${fmt(b[2])}</td><td class="n">${pct(b[3])}</td><td class="n">${b[4].toLocaleString('es-AR',{maximumFractionDigits:1})}</td><td class="n">${pct(b[5])}</td><td class="n">${pct(b[6])}</td><td>${esc(b[7])}</td></tr>`).join('');}
 function dPais(f){const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,10);
  const sel=$('f-iso').value,po={};f.forEach(r=>{const k=r[i.iso3];if(k)po[k]=(po[k]||0)+monto(r)/1e6});
  barras($('g-paises'),top(po).map(([k,v])=>[nombreIso(k),v,`data-iso="${k}"`,k===sel]));
@@ -994,15 +995,14 @@ document.querySelectorAll('th[data-o]').forEach(th=>th.onclick=()=>{const c=th.d
 function comparar(a,b){const x=valor(a,ORDEN.c),y=valor(b,ORDEN.c);
  if(x===null||x===undefined||x==='')return 1;if(y===null||y===undefined||y==='')return -1;
  return (typeof x==='number'&&typeof y==='number'?x-y:String(x).localeCompare(String(y),'es'))*ORDEN.dir;}
-const urlSegura=u=>/^https?:\/\//i.test(String(u||''))?esc(u):'';
 function dOps(f){
  const orden=[...f].sort(comparar).slice(0,VISTAS);
  $('t-nota').textContent=`(${fmt(Math.min(VISTAS,f.length))} de ${fmt(f.length)})`;
  $('b-mas').style.display=f.length>VISTAS?'':'none';
- const mo=r=>r[i.moneda_original]&&r[i.moneda_original]!=='USD'?`${r[i.moneda_original]} ${fmt((r[i.monto_original]||0)/1e6)} M`:'';
+ const mo=r=>r[i.moneda_original]&&r[i.moneda_original]!=='USD'?`${esc(r[i.moneda_original])} ${fmt((r[i.monto_original]||0)/1e6)} M`:'';
  const de=r=>{const t=r[i.descripcion];if(!t)return '';const e=esc(t);return t.length>140?`<details><summary>${esc(t.slice(0,140))}...</summary>${e}</details>`:e};
  const nombreOp=r=>{const n=esc(r[i.nombre]||'(sin nombre)'),u=urlSegura(r[i.url_proyecto]);return u?`<a href="${u}" target="_blank" rel="noopener">${n}</a>`:(r[i.nombre]?n:'')};
- $('t-cuerpo').innerHTML=orden.map(r=>`<tr><td>${r[i.anio_aprobacion]}</td><td>${r[i.institucion]}</td><td>${nombreOp(r)}</td><td>${esc(r[i.pais]||'')}</td><td>${esc(r[i.sector]||'')}</td><td>${r[i.forma_financiamiento]||''}</td><td>${(r[i.tipo_ventanilla]||'').replace('_',' ')}</td><td class="n">${r[i.monto_aprobado_usd]===null?'sin dato':fmt(monto(r)/1e6)}</td><td class="n">${r[i.monto_desembolsado_usd]===null?'':fmt(r[i.monto_desembolsado_usd]/1e6)}</td><td>${mo(r)}</td><td>${de(r)}</td></tr>`).join('');}
+ $('t-cuerpo').innerHTML=orden.map(r=>`<tr><td>${r[i.anio_aprobacion]}</td><td>${esc(r[i.institucion])}</td><td>${nombreOp(r)}</td><td>${esc(r[i.pais]||'')}</td><td>${esc(r[i.sector]||'')}</td><td>${esc(r[i.forma_financiamiento]||'')}</td><td>${esc((r[i.tipo_ventanilla]||'').replace('_',' '))}</td><td class="n">${r[i.monto_aprobado_usd]===null?'sin dato':fmt(monto(r)/1e6)}</td><td class="n">${r[i.monto_desembolsado_usd]===null?'':fmt(r[i.monto_desembolsado_usd]/1e6)}</td><td>${mo(r)}</td><td>${de(r)}</td></tr>`).join('');}
 $('b-mas').onclick=()=>{VISTAS+=PAG;dOps(FILT)};
 $('b-csv').onclick=()=>{const q=v=>v===null?'':'"'+String(v).replace(/"/g,'""')+'"';
  const csv=[C.join(',')].concat(filtradas().map(r=>r.map(q).join(','))).join('\n');
