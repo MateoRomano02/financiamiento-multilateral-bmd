@@ -125,19 +125,29 @@ def ventanillas(df: pd.DataFrame, desde: int = 2014, constantes: bool = False) -
     return pd.DataFrame(filas)
 
 
-def topes_de_facilidad_repetidos(df: pd.DataFrame, minimo: int = 10) -> pd.Series:
-    """Marca las filas donde una misma institución repite el mismo monto muchas veces en un año.
+def topes_de_facilidad_repetidos(df: pd.DataFrame, minimo: int = 5) -> pd.Series:
+    """Marca las filas donde una institución anota el mismo monto a varias líneas el mismo día.
 
     Es la firma de una facilidad marco cuyo tope se anota entero en cada línea participante, en
     lugar de la exposición individual. El caso que lo motivó es el programa de trade finance de la
-    IFC: en 2004 hay 57 operaciones con USD 7.000 millones cada una, que es el tope del programa
-    completo. Sumadas dan el 99% del total de la IFC de ese año y el 54% de toda su historia.
+    IFC: el 11/11/2004 hay 57 operaciones con USD 7.000 millones cada una, que es el tope del programa
+    completo. En el período pasa lo mismo con su programa de cadenas de suministro (siete bancos con
+    USD 3.115 millones el 15/12/2022) y con sus plataformas de fondos de capital de riesgo (26 con USD
+    250 millones el 17/7/2017).
+
+    La firma es la fecha exacta, no el año: préstamos genuinos de monto redondo se repiten muchas
+    veces en un año (el BIRF aprobó doce de USD 500 millones en 2021, en once fechas distintas).
+    Quedan afuera las fechas ancladas al 1 de enero de las fuentes que solo publican el año, y los
+    montos menores a USD 10 millones, donde las cooperaciones técnicas iguales del mismo día sí son
+    operaciones distintas.
 
     No es un error de la normalización sino de cómo la fuente publica esas operaciones. Se detecta
     de forma mecánica, sin nombrar programas, para que sirva también en casos que no conocemos.
     """
-    clave = df.groupby(["institucion", "anio_aprobacion", "monto_aprobado_usd"])["id_proyecto"].transform("size")
-    return (clave >= minimo) & df["monto_aprobado_usd"].notna() & (df["monto_aprobado_usd"] > 0)
+    monto = df["monto_aprobado_usd"]
+    repetidas = df.groupby(["institucion", "fecha_aprobacion", "monto_aprobado_usd"])["id_proyecto"].transform("size")
+    anclada = df["fecha_aprobacion"].astype(str).str.endswith("-01-01")
+    return (repetidas >= minimo) & ~anclada & (monto >= 1e7)
 
 
 def sin_monto(df: pd.DataFrame) -> pd.DataFrame:
