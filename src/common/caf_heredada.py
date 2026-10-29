@@ -1,6 +1,6 @@
 """CAF 2014-2025 desde la base heredada (2014-2022) y los informes anuales (2023-2025), cruzadas con el IATI.
 
-El archivo IATI de CAF trae el 27% de lo aprobado según los informes anuales. La base
+El archivo IATI de CAF trae el 27% de lo aprobado según los informes anuales (H37). La base
 heredada (`data/raw/legacy/caf/caf_final.xlsx`, 1.087 filas) la reconstruyó el equipo de 2022 desde
 esos informes y suma el 99,1% de su total para 2014-2022. Por eso, para esos años la base de
 operaciones de CAF es la heredada, y el IATI aporta atributos (ficha, desembolsos, prestatario,
@@ -127,13 +127,15 @@ def leer_heredada(ruta: Path = RUTA_HEREDADA, relevamiento: str = "2026-10-09") 
         usados.add(id_proyecto)
         tipo = _limpiar(r.tipo)
         riesgo = RIESGOS.get((_limpiar(r.riesgo) or "").lower())
+        # Sin riesgo declarado, decide el nombre del prestatario con las mismas reglas que el IATI.
+        categoria = riesgo or clasifica_nombre(prestatario, pais)[0]
         informe = urls.get(anio)
         fuente = (f"Base heredada del relevamiento 2022, reconstruida desde los informes anuales de CAF: "
                   f"{ruta_relativa}" + (f"; informe {anio}: {informe}" if informe else ""))
         filas.append({
             "banco_grupo": "CAF", "institucion": "CAF",
-            "tipo_ventanilla": riesgo,
-            "tipo_prestatario": riesgo or "sin_dato",
+            "tipo_ventanilla": categoria if categoria in ("soberana", "no_soberana") else None,
+            "tipo_prestatario": categoria,
             "prestatario": prestatario,
             "id_proyecto": id_proyecto, "nombre": nombre, "descripcion": _limpiar(r.descripcion),
             "pais": pais, "url_proyecto": None,

@@ -1,8 +1,8 @@
 """Tests de CAF 2014-2025: base heredada (2014-2022) y listados de los informes (2023-2025), cruzadas con el IATI.
 
-Protegen el contrato: para 2014-2022 la base de operaciones de CAF es la
+Protegen el contrato de la decisión del 9/10: para 2014-2022 la base de operaciones de CAF es la
 heredada, el IATI aporta atributos sin duplicar, y el total anual queda dentro de 3% del informe.
-Para 2023-2025 la base son los listados por operación de los informes.
+Para 2023-2025 la base son los listados por operación de los informes (decisión del 14/10).
 Los de cruce usan filas armadas a mano; los de totales leen las descargas reales.
 """
 
@@ -77,6 +77,19 @@ def test_solo_se_quita_la_fila_identica_en_todas_las_columnas(tmp_path):
     assert set(df["pais"]) == {"Brazil"} and set(df["origen_fila"]) == {ch.ORIGEN_HEREDADA}
     assert df["id_proyecto"].str.startswith("CAF-H-2016-").all()
     assert set(df["tipo_ventanilla"]) == {"no_soberana"} and set(df["forma_financiamiento"]) == {"prestamo"}
+
+
+def test_sin_riesgo_declarado_decide_el_nombre_del_prestatario(tmp_path):
+    cols = ["Nombre del proyecto", "País", "Prestatario", "Fecha de aprobación", "Monto Financiado",
+            "Sector", "Tipo de inversión/financiamiento", "Tipo de Préstamo", "Breve Descripción"]
+    filas = [["Línea", "Chile", "Banco Santander Chile", 2019, 50e6, "Finanzas", "Línea de Crédito", "", "d"],
+             ["Apoyo", "Paraguay", "República de Paraguay", 2019, 300e6, "Fiscal", "Préstamo", "", "d"],
+             ["Varios", "Chile", "Varios", 2019, 10e6, "Finanzas", "Préstamo", "", "d"]]
+    ruta = tmp_path / "h.xlsx"
+    pd.DataFrame(filas, columns=cols).to_excel(ruta, index=False)
+    df = ch.leer_heredada(ruta)
+    assert df["tipo_prestatario"].tolist() == ["no_soberana", "soberana", "sin_dato"]
+    assert df["tipo_ventanilla"].tolist()[:2] == ["no_soberana", "soberana"] and pd.isna(df["tipo_ventanilla"].iloc[2])
 
 
 def test_cruce_informe_con_iati_conserva_el_cliente_del_informe():

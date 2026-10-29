@@ -1,6 +1,7 @@
 """La clasificación del prestatario de CAF, FONPLATA y BCIE por su nombre.
 
-Los casos son prestatarios privados confirmados en comunicados de CAF, y las trampas que llevaron a crear las categorías de revisión.
+Los casos salen de la verificación del 8/10/2026 (H33): prestatarios privados confirmados en
+comunicados de CAF, y las trampas que llevaron a crear las categorías de revisión.
 """
 
 import xml.etree.ElementTree as ET
@@ -21,6 +22,10 @@ from src.common.prestatario import clasifica_nombre, prestatario_iati
     # Lo subnacional se evalúa antes que "Ministerio": un ministerio provincial no es soberano.
     ("Ministerio de Educación de Jujuy", "subnacional"),
     ("Prefeitura de Fortaleza", "subnacional"),
+    ("Estados Unidos Méxicanos", "soberana"),
+    ("Países accionistas o entes subnacionales con garantía soberana", "soberana"),
+    ("Pan American Energy SL", "no_soberana"),
+    ("Instituto de Crédito Oficial - ICO", "banco_publico"),
     ("", "sin_dato"),
 ])
 def test_clasifica_nombre(nombre, esperado):

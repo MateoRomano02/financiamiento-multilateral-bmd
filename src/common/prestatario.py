@@ -1,7 +1,8 @@
 """Quién recibe el préstamo en CAF, FONPLATA y BCIE, y si es soberano.
 
 Estos tres bancos no separan sus ventanillas en instituciones ni publican la garantía soberana en
-ningún campo del archivo IATI. Lo que define la ventanilla es el sujeto del préstamo: un Estado nacional es
+ningún campo del archivo IATI (revisado el 8/10/2026 sobre las tres descargas). Por criterio de la
+dirección del 8/10, lo que define la ventanilla es el sujeto del préstamo: un Estado nacional es
 soberano; una empresa o un banco, no soberano; un gobierno subnacional depende del banco. La única
 señal es el nombre del prestatario, así que la clasificación es por reglas sobre ese nombre, y los
 casos que el nombre no resuelve quedan en categorías de revisión en lugar de forzarse:
@@ -12,7 +13,8 @@ casos que el nombre no resuelve quedan en categorías de revisión en lugar de f
 
 Dónde está el prestatario: en el BCIE, en el receptor de las transacciones (que además declara si
 es sector privado, tipo 70); en FONPLATA, en la organización responsable (rol 2); en CAF solo está
-el ejecutor (rol 4), que no siempre es el deudor.
+el ejecutor (rol 4), que no siempre es el deudor. Evidencia y verificaciones: H33 en
+docs/hallazgos.md.
 """
 
 from __future__ import annotations
@@ -84,6 +86,20 @@ OVR = {
  'direccion de vialidad pcia de bs as': ('subnacional', 'direccion provincial'),
  'direccion de vialidad provincial': ('subnacional', 'direccion provincial'),
  'casa civil do estado do para': ('subnacional', 'gobierno del estado de Para'),
+ 'estados unidos mexicanos': ('soberana', 'Estado nacional (Mexico)'),
+ 'mancomunidad de las bahamas commonwealth of the bahamas': ('soberana', 'Estado nacional (Bahamas)'),
+ 'departamento de valle del cauca': ('subnacional', 'departamento de Colombia'),
+ 'distrito de barranquilla': ('subnacional', 'distrito de Colombia (gobierno local)'),
+ 'instituto de credito oficial ico': ('banco_publico', 'ICO: agencia financiera del Estado espanol'),
+ 'caixa general de depositos': ('banco_publico', 'banco estatal portugues'),
+ 'enel': ('no_soberana', 'grupo electrico cotizado'),
+ 'v tal': ('no_soberana', 'empresa privada de fibra optica (Brasil)'),
+ 'infraestructura arazati': ('no_soberana', 'vehiculo del consorcio privado de la PPP Arazati (Uruguay)'),
+ 'caja de compensacion de asignacion familiar los andes': ('no_soberana', 'entidad privada sin fines de lucro (Chile)'),
+ 'asociacion civil club atletico river plate carp': ('no_soberana', 'asociacion civil'),
+ 'oenergy pv 72 mwp': ('no_soberana', 'proyecto solar privado'),
+ 'atacama solar': ('no_soberana', 'proyecto solar privado'),
+ 'corporacion interamericana para el financiamiento de infraestructura': ('no_soberana', 'CIFI: financiera privada'),
  'secretaria de turismo do estado do ceara': ('subnacional', 'secretaria del estado de Ceara'),
 }
 BANCO = r'\b(banco|bank|financiera|banhprovi|banesco|santander|scotiabank|davivienda|bbva|itau|citibank|hsbc|bladex|cofides)\b'
@@ -91,7 +107,7 @@ BANCO_PUB = (r'banco del estado|banco de la nacion|bndes|bancoldex|banco do nord
   r'corporacion financiera nacional|financiera de desarrollo nacional|findeter|\bbice\b|banco de inversion y comercio exterior|'
   r'banco de desarrollo|banco de desenvolvimento|desenvolve sp|banco regional de desenvolvimento|brde|banadesa|bandex|banco nacional de comercio exterior|nafin|agencia financiera de desarrollo|finanzas populares|agencia de fomento|banco nacional|banco agricola|'
   r'banco de la republica|banco central|nacional financiera|cofide|banco de fomento|banco estado|banco para el fomento')
-PRIVADO = r'\b(s a|s a s|s a m|c a|ltda|ltd|inc|llc|l p|lp|ltd|sas|s de r l|holding|group|grupo|partners|ventures|fund|fondo de capital privado|debt fund|investment)\b'
+PRIVADO = r'\b(s a|s a s|s a m|c a|s l|sl|ltda|ltd|inc|llc|l p|lp|ltd|sas|s de r l|holding|group|grupo|partners|ventures|fund|fondo de capital privado|debt fund|investment)\b'
 ESTADO_HINT = r'\b(nacional|estatal|del estado|publica|publico|vial del uruguay)\b'
 EMPRESA = (r'\b(empresa|compania|ferrocarril\w*|hidrologica|servicio de agua|electric\w*|energia|acueducto\w*|puerto\w*|portuaria|'
   r'metropolitano|corporacion|petro\w*|telecom\w*|aeropuerto\w*)\b')
@@ -107,6 +123,7 @@ def clasifica_nombre(nombre, pais=None):
     n = norm(nombre); k = n.strip()
     if not k: return ('sin_dato', 'sin nombre', 'n/a')
     if k in OVR: c, m = OVR[k]; return (c, 'excepcion manual: ' + m, 'media')
+    if re.search(r'\bcon garantia soberana\b', n): return ('soberana', 'el nombre declara garantia soberana', 'alta')
     if re.search(BANCO_PUB, n): return ('banco_publico', 'banco/financiera estatal conocido, revisar garantia soberana', 'baja')
     if re.search(BANCO, n):
         if re.search(r'\b(del estado|nacional|desarrollo|fomento|estatal)\b', n):
