@@ -1,6 +1,6 @@
 """CAF 2014-2025 desde la base heredada (2014-2022) y los informes anuales (2023-2025), cruzadas con el IATI.
 
-El archivo IATI de CAF trae el 27% de lo aprobado según los informes anuales (H37). La base
+El archivo IATI de CAF trae el 27% de lo aprobado según los informes anuales. La base
 heredada (`data/raw/legacy/caf/caf_final.xlsx`, 1.087 filas) la reconstruyó el equipo de 2022 desde
 esos informes y suma el 99,1% de su total para 2014-2022. Por eso, para esos años la base de
 operaciones de CAF es la heredada, y el IATI aporta atributos (ficha, desembolsos, prestatario,
