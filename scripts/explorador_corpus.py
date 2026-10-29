@@ -55,8 +55,8 @@ FICHAS = {
            "separar ventanillas; se clasificó por el prestatario. Las operaciones salen de sus informes anuales: "
            "2014-2022 de la base que el equipo reconstruyó en 2022 y 2023-2025 de los listados de cada "
            "informe. El riesgo soberano viene de la base heredada "
-           "(2014-2022) y se infiere del cliente (2023-2025). Lo no soberano da 40% del monto, cerca del "
-           "48% que declaran los informes.",
+           "(2014-2022) y se infiere del cliente (2023-2025). Lo no soberano da 41,6% del monto, contra el "
+           "47,9% que declaran los informes; con los bancos públicos como no soberanos llega a 47,3%.",
     "NDB": "Nuevo Banco de Desarrollo de los BRICS, opera desde 2016. Declara la ventanilla de cada "
            "operación y presta en monedas locales, convertidas a dólares con el promedio del año. Los "
            "montos se completaron con el anexo de su informe 2025. No publica forma de financiamiento ni "
