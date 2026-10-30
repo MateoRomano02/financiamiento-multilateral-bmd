@@ -747,7 +747,7 @@ lo cancelado, el costo total del proyecto o el aporte de terceros.</p></details>
 <li>Contraste de CAF con sus informes anuales</li>
 <li>Exposición del proyecto</li></ul></div>
 <div><h3>Después</h3><ul>
-<li>Informe final, a fines de noviembre</li>
+<li>Informe final, el 13 de noviembre</li>
 <li>Etapa 2, en 2027: etiqueta de crédito verde, operación por operación</li></ul></div>
 </div>
 </div>
