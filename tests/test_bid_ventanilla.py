@@ -1,7 +1,6 @@
 """La cartera privada que el BID aprobó hasta 2015 y los montos viejos de BID Invest.
 
-Criterio de la dirección (30/10/2026): los préstamos sin garantía soberana del BID con instrumento IIC
-son no soberanos. La misma operación figura en el archivo de BID Invest y se cuenta una vez.
+Criterio de la dirección (30/10/2026): los préstamos del BID sin garantía soberana son no soberanos. La misma operación figura en el archivo de BID Invest y se cuenta una vez.
 """
 
 import csv
@@ -29,11 +28,11 @@ def _bid(tmp_path, filas):
 
 
 def test_la_cartera_privada_del_bid_es_no_soberana(tmp_path):
-    df = nz.normalizar_bid(_bid(tmp_path, [("AR-L1", "IIC", "NSG"), ("AR-L2", "LON", "SG"), ("AR-T3", "MIF", "NSG")]),
+    df = nz.normalizar_bid(_bid(tmp_path, [("AR-L1", "IIC", "NSG"), ("AR-L2", "LON", "SG"), ("AR-T3", "MIF", "NSG"), ("AR-L4", "SMP", "NSG")]),
                            "2026-10-30")
     assert df.set_index("id_proyecto")["tipo_ventanilla"].to_dict() == {
-        "AR-L1": "no_soberana", "AR-L2": "soberana", "AR-T3": "no_soberana"}
-    assert df.set_index("id_proyecto")["institucion"].to_dict() == {"AR-L1": "BID", "AR-L2": "BID", "AR-T3": "BID Lab"}
+        "AR-L1": "no_soberana", "AR-L2": "soberana", "AR-T3": "no_soberana", "AR-L4": "no_soberana"}
+    assert df.set_index("id_proyecto")["institucion"].to_dict() == {"AR-L1": "BID", "AR-L2": "BID", "AR-T3": "BID Lab", "AR-L4": "BID"}
 
 
 def test_bid_invest_toma_el_monto_viejo_solo_si_falta_el_propio(tmp_path):
@@ -67,9 +66,9 @@ def test_la_operacion_repetida_queda_una_vez_del_lado_del_bid():
         ("BID Invest", "AR-L3", 2015), ("BID Invest", "AR-L1", 2020)]
 
 
-def test_la_validacion_acepta_la_cartera_privada_vieja_y_no_la_nueva():
+def test_la_validacion_acepta_prestamos_privados_del_bid():
     df = pd.DataFrame([{"institucion": "BID", "tipo_ventanilla": "no_soberana", "anio_aprobacion": 2015},
                        {"institucion": "BID", "tipo_ventanilla": "soberana", "anio_aprobacion": 2018}])
     assert v.validar_ventanilla(df) == []
-    df.loc[1, "tipo_ventanilla"] = "no_soberana"
+    df.loc[1, "institucion"] = "BID Invest"
     assert v.validar_ventanilla(df)

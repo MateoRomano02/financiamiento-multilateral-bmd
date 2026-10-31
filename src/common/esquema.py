@@ -116,7 +116,7 @@ VENTANILLA_POR_INSTITUCION: dict[str, str] = {
     "IDA": "soberana",
     "IFC": "no_soberana",
     "MIGA": "no_soberana",
-    "BID": "soberana",  # salvo la cartera privada de 2014-2015, ver normalizar_bid
+    "BID": "soberana",  # salvo los préstamos sin garantía soberana, ver normalizar_bid
     "BID Invest": "no_soberana",
     "BID Lab": "no_soberana",
     # CAF, NDB y AIIB operan ambas ventanillas sin separarlas institucionalmente:

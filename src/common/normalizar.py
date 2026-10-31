@@ -538,10 +538,10 @@ def normalizar_bid(ruta: Path, relevamiento: str) -> pd.DataFrame:
     for r in registros:
         instrumento = (r.get("lending_instrmnt_cd") or "").strip()
         institucion = "BID Lab" if instrumento == "MIF" else "BID"
-        # Hasta 2015 el BID aprobaba la cartera privada que en 2016 pasó a BID Invest: préstamos sin
-        # garantía soberana (NSG) con instrumento IIC. La dirección decidió el 30/10/2026 contarlos
-        # como no soberanos, porque la fuente confirma que el receptor no es soberano.
-        privado = institucion == "BID" and instrumento == "IIC" and (r.get("lending_typ_cd") or "").strip() == "NSG"
+        # Los préstamos del BID sin garantía soberana (NSG) son al sector privado: la cartera privada que
+        # hasta 2015 aprobaba el propio BID (instrumento IIC), los pequeños proyectos y las líneas de
+        # comercio exterior. La dirección decidió el 30/10/2026 contarlos como no soberanos.
+        privado = institucion == "BID" and (r.get("lending_typ_cd") or "").strip() == "NSG"
         filas.append(
             {**_fila_base(institucion, "GBID", url, relevamiento),
              **({"tipo_ventanilla": "no_soberana"} if privado else {}),

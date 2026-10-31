@@ -120,14 +120,13 @@ def validar_fechas(df: pd.DataFrame) -> list[str]:
 def validar_ventanilla(df: pd.DataFrame) -> list[str]:
     """La ventanilla declarada coincide con la que corresponde a la institucion.
 
-    Solo aplica a las instituciones que tienen ventanilla fija (ver VENTANILLA_POR_INSTITUCION). La
-    cartera privada que el BID aprobó hasta 2015 (instrumento IIC) es no soberana dentro del BID.
+    Solo aplica a las instituciones que tienen ventanilla fija (ver VENTANILLA_POR_INSTITUCION). Los
+    préstamos del BID sin garantía soberana son no soberanos dentro del BID.
     """
     if not {"institucion", "tipo_ventanilla"}.issubset(df.columns):
         return []
     errores = []
-    privada_bid = ((df["institucion"] == "BID") & (df["tipo_ventanilla"] == "no_soberana")
-                   & (df["anio_aprobacion"] <= 2015 if "anio_aprobacion" in df else False))
+    privada_bid = (df["institucion"] == "BID") & (df["tipo_ventanilla"] == "no_soberana")
     for institucion, esperada in VENTANILLA_POR_INSTITUCION.items():
         filas = df[(df["institucion"] == institucion) & ~privada_bid]
         mal = filas[filas["tipo_ventanilla"] != esperada]
