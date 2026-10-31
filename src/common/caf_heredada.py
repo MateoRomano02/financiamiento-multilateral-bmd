@@ -381,4 +381,8 @@ def construir_caf(iati: pd.DataFrame) -> pd.DataFrame:
         agregar = elegir_iati_sin_sumar(base, libres, informe)
         partes += [cruzada, iati_rango.loc[agregar]]
     partes.append(pendiente)
-    return pd.concat([p for p in partes if len(p)], ignore_index=True)[list(COLUMNAS)]
+    caf = pd.concat([p for p in partes if len(p)], ignore_index=True)[list(COLUMNAS)]
+    # Criterio de la dirección (30/10/2026): en CAF los bancos públicos de desarrollo cuentan como no
+    # soberanos. Con eso la parte no soberana cierra con la que declaran sus informes anuales.
+    caf.loc[caf["tipo_ventanilla"].isna() & (caf["tipo_prestatario"] == "banco_publico"), "tipo_ventanilla"] = "no_soberana"
+    return caf

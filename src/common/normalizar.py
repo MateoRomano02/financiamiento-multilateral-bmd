@@ -536,10 +536,15 @@ def normalizar_bid(ruta: Path, relevamiento: str) -> pd.DataFrame:
     url = "https://data.iadb.org/dataset/idb-projects-dataset"
     filas = []
     for r in registros:
-        es_lab = (r.get("lending_instrmnt_cd") or "").strip() == "MIF"
-        institucion = "BID Lab" if es_lab else "BID"
+        instrumento = (r.get("lending_instrmnt_cd") or "").strip()
+        institucion = "BID Lab" if instrumento == "MIF" else "BID"
+        # Hasta 2015 el BID aprobaba la cartera privada que en 2016 pasó a BID Invest: préstamos sin
+        # garantía soberana (NSG) con instrumento IIC. La dirección decidió el 30/10/2026 contarlos
+        # como no soberanos, porque la fuente confirma que el receptor no es soberano.
+        privado = institucion == "BID" and instrumento == "IIC" and (r.get("lending_typ_cd") or "").strip() == "NSG"
         filas.append(
             {**_fila_base(institucion, "GBID", url, relevamiento),
+             **({"tipo_ventanilla": "no_soberana"} if privado else {}),
              "id_proyecto": (r.get("oper_num") or "").strip(),
              "nombre": r.get("oper_nm"),
              "pais": r.get("cntry_nm"),
@@ -576,6 +581,11 @@ def normalizar_bid_invest(ruta: Path, relevamiento: str) -> pd.DataFrame:
         if not pid or pid in vistos:
             continue
         vistos.add(pid)
+        # En las operaciones de numeración vieja (mayormente 2014-2016) iic_financing_amount viene
+        # vacío y el monto propio de BID Invest está en project_idb_fin_amount: coincide con el
+        # "Financing amount" de la ficha web de cada operación. Cuando los dos campos tienen valor
+        # miden cosas distintas, y se usa solo el primero.
+        monto = a_numero(r.get("iic_financing_amount")) or a_numero(r.get("project_idb_fin_amount"))
         filas.append(
             {**_fila_base("BID Invest", "GBID", url, relevamiento),
              "id_proyecto": pid,
@@ -585,8 +595,8 @@ def normalizar_bid_invest(ruta: Path, relevamiento: str) -> pd.DataFrame:
              "fecha_aprobacion": a_fecha(r.get("approval_date")),
              "estado": mapear_estado("bid_invest", r.get("status")),
              "estado_original": r.get("status"),
-             "monto_aprobado_usd": a_numero(r.get("iic_financing_amount")),
-             "monto_original": a_numero(r.get("iic_financing_amount")),
+             "monto_aprobado_usd": monto,
+             "monto_original": monto,
              "moneda_original": (r.get("currency") or "").strip() or None,
              "instrumento": (r.get("Investment_instrument") or "").replace("&amp;", "y") or None,
              "forma_financiamiento": (_forma_bid_invest(r.get("Investment_instrument"))
@@ -984,4 +994,17 @@ def normalizar_todo() -> pd.DataFrame:
             continue
         ruta = ultima_descarga(patron)
         partes.append(funcion(ruta, _fecha_del_nombre(ruta)))
-    return pd.concat(partes, ignore_index=True)
+    return sin_doble_bid(pd.concat(partes, ignore_index=True))
+
+
+def sin_doble_bid(df: pd.DataFrame) -> pd.DataFrame:
+    """La cartera privada que el BID aprobó hasta 2015 aparece también en el archivo de BID Invest
+    con el mismo número de operación y el mismo año. Queda la fila del BID, que trae el monto como campo
+    propio; si el BID la da por cancelada y BID Invest no, queda la de BID Invest. Con el mismo número
+    pero otro año es otra aprobación (por ejemplo, la renovación de una línea de comercio exterior) y
+    se conservan las dos."""
+    privadas = df[(df["institucion"] == "BID") & (df["tipo_ventanilla"] == "no_soberana") & (df["estado"] != "cancelado")]
+    claves = set(zip(privadas["id_proyecto"], privadas["anio_aprobacion"]))
+    repetida = (df["institucion"] == "BID Invest") & pd.Series(
+        [(i, a) in claves for i, a in zip(df["id_proyecto"], df["anio_aprobacion"])], index=df.index)
+    return df[~repetida].reset_index(drop=True)

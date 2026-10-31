@@ -179,3 +179,10 @@ def test_2023_2025_vienen_de_los_informes_y_2026_sigue_siendo_iati(caf):
     # Lo posterior a 2025 solo puede venir del IATI. Puede no haber ninguna fila: en el CI los tests
     # corren antes de la descarga y la foto versionada de CAF es de agosto.
     assert set(caf.loc[caf["anio_aprobacion"] >= 2026, "origen_fila"]) <= {ch.ORIGEN_IATI}
+
+
+def test_los_bancos_publicos_de_caf_son_no_soberanos_salvo_que_caf_diga_otra_cosa(caf):
+    # Criterio de la dirección del 30/10/2026. Si la base o el informe declaran riesgo soberano, manda eso.
+    bancos = caf[caf["tipo_prestatario"] == "banco_publico"]
+    assert bancos["tipo_ventanilla"].notna().all()
+    assert (bancos["tipo_ventanilla"] == "no_soberana").mean() > 0.9

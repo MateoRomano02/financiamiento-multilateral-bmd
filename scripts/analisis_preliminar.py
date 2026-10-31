@@ -93,8 +93,9 @@ def ventanillas(df: pd.DataFrame, desde: int = 2014, constantes: bool = False) -
         todas = lados["soberana"] + lados["no_soberana"]
         sub = df[df["institucion"].isin(todas) & df[columna].notna() & (df["anio_aprobacion"] >= desde)]
         for anio, tramo in sub.groupby("anio_aprobacion"):
-            sob = tramo[tramo["institucion"].isin(lados["soberana"])][columna].sum()
-            nos = tramo[tramo["institucion"].isin(lados["no_soberana"])][columna].sum()
+            # Cuenta la ventanilla de cada fila: la cartera privada del BID de 2014-2015 es no soberana.
+            sob = tramo.loc[tramo["tipo_ventanilla"] == "soberana", columna].sum()
+            nos = tramo.loc[tramo["tipo_ventanilla"] == "no_soberana", columna].sum()
             total = sob + nos
             if not total:
                 continue
