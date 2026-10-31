@@ -55,8 +55,8 @@ FICHAS = {
            "separar ventanillas; se clasificó por el prestatario. Las operaciones salen de sus informes anuales: "
            "2014-2022 de la base que el equipo reconstruyó en 2022 y 2023-2025 de los listados de cada "
            "informe. El riesgo soberano viene de la base heredada "
-           "(2014-2022) y se infiere del cliente (2023-2025). Lo no soberano da 41,6% del monto, contra el "
-           "47,9% que declaran los informes; con los bancos públicos como no soberanos llega a 47,3%.",
+           "(2014-2022) y se infiere del cliente (2023-2025); los bancos públicos de desarrollo cuentan como "
+           "no soberanos. Lo no soberano da 47,3% del monto, contra el 47,9% que declaran los informes.",
     "NDB": "Nuevo Banco de Desarrollo de los BRICS, opera desde 2016. Declara la ventanilla de cada "
            "operación y presta en monedas locales, convertidas a dólares con el promedio del año. Los "
            "montos se completaron con el anexo de su informe 2025. No publica forma de financiamiento ni "
@@ -551,8 +551,8 @@ Son contexto, no causas.</dd>
 </dl>
 <p class="aviso"><b>Tres advertencias.</b> Las operaciones de CAF salen de sus informes anuales, porque su archivo
 oficial trae cerca de un cuarto de lo aprobado. La IFC anota el tope entero de algunas facilidades marco en cada banco
-participante, así que sus montos en mercados financieros pueden estar inflados. En 2014 y 2015 la cartera privada del BID
-figura como soberana, porque pasó a BID Invest en 2016.</p>
+participante, así que sus montos en mercados financieros pueden estar inflados. En 2014 y 2015 la cartera privada del grupo
+la aprobaba el propio BID: esos préstamos cuentan como no soberanos, aunque figuran como del BID.</p>
 </details>
 <p class="nota">Operaciones aprobadas 2014 a 2025, sin canceladas, armonizadas desde las fuentes oficiales. Millones de dólares.</p>
 <p id="tableros" class="tableros" data-fb="tableros" data-fb-label="Tableros por banco"></p>
@@ -714,8 +714,8 @@ separan ventanillas se clasifican por el prestatario.</p>
 descarga están en la tabla Fuentes y fecha de descarga, en la pestaña Resumen.</p>
 <h3>Límites conocidos</h3>
 <p>CAF publica solo una parte menor de lo aprobado: el resto sale de sus informes anuales. Los sectores no son comparables entre bancos,
-porque cada uno usa su propio catálogo. En 2014 y 2015 hay operaciones privadas del BID dentro de la ventanilla soberana, porque su
-cartera privada pasó a BID Invest recién en 2016.</p>
+porque cada uno usa su propio catálogo. En 2014 y 2015 la cartera privada del grupo la aprobaba el propio BID, porque pasó a BID
+Invest recién en 2016: esos préstamos cuentan como no soberanos.</p>
 <h3>Etapa 2</h3>
 <p>Operación por operación, se le asignará una etiqueta de crédito que diga si es verde. Antes hace falta una definición escrita de qué
 cuenta como verde, porque sin ella ningún método automático da un resultado defendible. Está prevista para el año próximo.</p>
@@ -764,6 +764,7 @@ lo cancelado, el costo total del proyecto o el aporte de terceros.</p></details>
 <dt>Cada banco con sus propios sectores (la dirección del proyecto)</dt><dd>Los catálogos no son comparables; reclasificar exige leer los textos de los proyectos y queda para otra etapa.</dd>
 <dt>Base completa y consistente antes que más bancos (la dirección del proyecto)</dt><dd>Un universo parcial hace falsas las comparaciones.</dd>
 <dt>2020 se lee aparte (la referente de los datos)</dt><dd>Los bancos reprogramaron préstamos ya aprobados y la carga fue desordenada.</dd>
+<dt>La cartera privada del BID de 2014 y 2015 y los bancos públicos de CAF son no soberanos (la dirección del proyecto)</dt><dd>La fuente confirma que el receptor no es soberano; con eso CAF cierra con sus informes.</dd>
 <dt>Se unen las descargas de CAF (el equipo técnico)</dt><dd>CAF dejó de publicar operaciones terminadas; tomar solo la última descarga las perdería.</dd>
 </dl>
 </div>
