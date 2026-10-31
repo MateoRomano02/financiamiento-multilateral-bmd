@@ -764,7 +764,7 @@ lo cancelado, el costo total del proyecto o el aporte de terceros.</p></details>
 <dt>Cada banco con sus propios sectores (la dirección del proyecto)</dt><dd>Los catálogos no son comparables; reclasificar exige leer los textos de los proyectos y queda para otra etapa.</dd>
 <dt>Base completa y consistente antes que más bancos (la dirección del proyecto)</dt><dd>Un universo parcial hace falsas las comparaciones.</dd>
 <dt>2020 se lee aparte (la referente de los datos)</dt><dd>Los bancos reprogramaron préstamos ya aprobados y la carga fue desordenada.</dd>
-<dt>La cartera privada del BID de 2014 y 2015 y los bancos públicos de CAF son no soberanos (la dirección del proyecto)</dt><dd>La fuente confirma que el receptor no es soberano; con eso CAF cierra con sus informes.</dd>
+<dt>Los préstamos del BID sin garantía soberana y los bancos públicos de CAF son no soberanos (la dirección del proyecto)</dt><dd>La fuente confirma que el receptor no es soberano; con eso CAF cierra con sus informes.</dd>
 <dt>Se unen las descargas de CAF (el equipo técnico)</dt><dd>CAF dejó de publicar operaciones terminadas; tomar solo la última descarga las perdería.</dd>
 </dl>
 </div>
