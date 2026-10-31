@@ -123,7 +123,7 @@ def test_las_tablas_de_referencia_van_plegadas_y_las_advertencias_se_dicen_una_v
         assert re.search(rf'<details class="ref"><summary><h2>{titulo}</h2><span class="ver">Ver tabla</span></summary>', ex.PAGINA)
     assert 'class="ref" open' not in ex.PAGINA
     textos = ex.PAGINA + " ".join(ex.FICHAS.values())
-    assert textos.count("cartera privada del BID") == 1
+    assert textos.count("préstamos del BID sin garantía soberana") == 1
     assert textos.count("No cambia con los filtros") == 1
     assert textos.count("un cuarto de lo") == 1
 
